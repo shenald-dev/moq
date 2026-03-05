@@ -1,0 +1,50 @@
+{
+  "name": "moq",
+  "version": "0.1.0",
+  "description": "HTTP mocks at the speed of thought. Zero-config mock server.",
+  "main": "src/index.js",
+  "bin": {
+    "moq": "./bin/cli.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "node tests/test.js",
+    "build:bin": "pkg . --out-path bin/",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "mock",
+    "http",
+    "api",
+    "server",
+    "zero-config",
+    "cli",
+    "vibe-coder"
+  ],
+  "author": "shenald.dev",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "chokidar": "^3.5.3",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0",
+    "pkg": "^5.8.1",
+    "supertest": "^6.3.3"
+  },
+  "pkg": {
+    "scripts": [
+      "bin/cli.js"
+    ],
+    "assets": [
+      "mocks/**/*"
+    ],
+    "targets": [
+      "node18-linux-x64",
+      "node18-macos-x64",
+      "node18-windows-x64"
+    ]
+  }
+}
