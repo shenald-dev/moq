@@ -1,27 +1,18 @@
 /**
- * moq — basic integration tests
+ * moq — basic integration tests (simplified)
  */
 
 const http = require('http');
-const { readFileSync, unlinkSync, writeFileSync, existsSync } = require('fs');
+const { readFileSync, existsSync } = require('fs');
 const path = require('path');
 
-// Helper to start server
-function startServer(port, mocksDir) {
-  const MoqServer = require('../src/index');
-  const server = new MoqServer({ port, mocksDir, noReload: true });
-  // Override listen to not block
-  const httpServer = server.app.listen(port, () => {});
-  return { server, httpServer };
-}
-
 // Test utilities
-function request(method, path, port, body = null) {
+function request(method, pathStr, port, body = null) {
   return new Promise((resolve, reject) => {
     const options = {
       hostname: 'localhost',
       port,
-      path,
+      path: pathStr,
       method,
       headers: body ? { 'Content-Type': 'application/json' } : {}
     };
@@ -46,20 +37,17 @@ function request(method, path, port, body = null) {
 async function runTests() {
   console.log('🧪 Running moq tests...');
   const port = 3333;
-  const mocksDir = path.join(__dirname, 'test-mocks');
-  if (!existsSync(mocksDir)) {
-    readFileSync(path.join(__dirname, '..', 'mocks', 'GET-/api/users.json');
-    // copy sample mocks
-    writeFileSync(path.join(mocksDir, 'GET-/api/users.json'), readFileSync(path.join(__dirname, '..', 'mocks', 'GET-/api/users.json')));
-  }
+  const mocksDir = path.join(__dirname, '..', 'mocks');
 
-  const { httpServer } = startServer(port, mocksDir);
+  // Start server
+  const MoqServer = require('../src/index');
+  const server = new MoqServer({ port, mocksDir, noReload: true });
+  const httpServer = server.app.listen(port, () => console.log(`🚀 Test server on :${port}`));
 
-  // Wait a bit
+  // Wait for server startup
   await new Promise(r => setTimeout(r, 500));
 
-  let passed = 0;
-  let failed = 0;
+  let passed = 0, failed = 0;
 
   // Test 1: health
   try {
@@ -79,7 +67,7 @@ async function runTests() {
   // Test 2: mock served
   try {
     const r = await request('GET', '/api/users', port);
-    if (r.status === 200 && r.body.users) {
+    if (r.status === 200 && r.body && r.body.users) {
       console.log('✅ Mock GET /api/users');
       passed++;
     } else {
@@ -91,7 +79,7 @@ async function runTests() {
     failed++;
   }
 
-  // Test 3: 404 without fallback
+  // Test 3: 404 fallback
   try {
     const r = await request('GET', '/unknown', port);
     if (r.status === 404) {
