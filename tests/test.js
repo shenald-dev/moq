@@ -44,6 +44,17 @@ async function runTests() {
   const server = new MoqServer({ port, mocksDir, noReload: true });
   const httpServer = server.app.listen(port, () => console.log(`🚀 Test server on :${port}`));
 
+  // Target server for proxy tests
+  const express = require('express');
+  const targetApp = express();
+  targetApp.use(express.json());
+  targetApp.get('/api/real', (req, res) => res.json({ real: true }));
+  const targetServer = targetApp.listen(4005, () => console.log('🚀 Target server on :4005'));
+
+  // Proxy server setup
+  const proxyServer = new MoqServer({ port: 3334, mocksDir, proxy: true, proxyTarget: 'http://localhost:4005', noReload: true });
+  const proxyHttpServer = proxyServer.app.listen(3334, () => console.log(`🚀 Proxy server on :3334`));
+
   // Wait for server startup
   await new Promise(r => setTimeout(r, 500));
 
@@ -94,8 +105,40 @@ async function runTests() {
     failed++;
   }
 
+  // Test 4: Dynamic parameter fallback
+  try {
+    const r = await request('GET', '/api/users/123', port);
+    if (r.status === 200 && r.body && r.body.user === 'dynamic') {
+      console.log('✅ Mock GET /api/users/123 (Dynamic)');
+      passed++;
+    } else {
+      console.log('❌ Dynamic Mock failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Dynamic Mock error', e);
+    failed++;
+  }
+
+  // Test 5: Proxy fallback
+  try {
+    const r = await request('GET', '/api/real', 3334);
+    if (r.status === 200 && r.body && r.body.real === true) {
+      console.log('✅ Proxy GET /api/real');
+      passed++;
+    } else {
+      console.log('❌ Proxy GET failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Proxy GET error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
+  proxyHttpServer.close();
+  targetServer.close();
 
   console.log(`\n📊 Tests: ${passed} passed, ${failed} failed`);
   process.exit(failed > 0 ? 1 : 0);

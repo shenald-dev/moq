@@ -8,11 +8,14 @@ const express = require('express');
 const path = require('path');
 const chokidar = require('chokidar');
 const fs = require('fs');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 class MoqServer {
   constructor(options = {}) {
     this.port = options.port || 3000;
-    this.mocksDir = options.mocksDir || './mocks';
+    // Resolve absolute path to prevent traversal attacks
+    this.mocksDir = path.resolve(process.cwd(), options.mocksDir || './mocks');
     this.proxyMode = options.proxy || false;
     this.proxyTarget = options.proxyTarget;
     this.noReload = options.noReload || false;
@@ -26,6 +29,33 @@ class MoqServer {
   }
 
   setupMiddleware() {
+    // Security headers
+    // Disable helmet's CSP so it doesn't break simple JSON APIs that might be embedded or requested across origins.
+    this.app.use(helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: "cross-origin" }
+    }));
+
+    // Enable CORS for all routes (since this is a mock API tool)
+    this.app.use((req, res, next) => {
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+      if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+      }
+      next();
+    });
+
+    // Rate limiting
+    const limiter = rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 1000, // limit each IP to 1000 requests per windowMs
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
+    this.app.use(limiter);
+
     // Logging middleware
     this.app.use((req, res, next) => {
       console.log(`[${req.method}] ${req.path}`);
@@ -94,26 +124,85 @@ class MoqServer {
 
   resolveMockPath(method, route) {
     // Normalize route to file pattern
-    // Convert /api/users/123 → /api/users/:id.json if exists, or exact match
     route = route.replace(/\/+$/, ''); // remove trailing slash
-    const candidate = path.join(this.mocksDir, `${method}-${route}.json`);
-    if (fs.existsSync(candidate)) return candidate;
+
+    // Prevent directory traversal attacks
+    const normalizedRoute = path.normalize(`/${route}`).replace(/^(\.\.[\/\\])+/, '');
+
+    const candidate = path.join(this.mocksDir, `${method}-${normalizedRoute}.json`);
+
+    // Verify candidate is actually inside mocksDir to prevent path traversal
+    if (candidate.startsWith(this.mocksDir) && fs.existsSync(candidate)) {
+      return candidate;
+    }
 
     // Try dynamic: if /api/users/123 doesn't match, try /api/users/:id.json
-    const parts = route.split('/');
-    // Look for any file that matches pattern with :param
-    const mockFiles = fs.readdirSync(this.mocksDir).filter(f => f.startsWith(`${method}-`));
+    const parts = normalizedRoute.split('/').filter(Boolean);
+
+    // Recursively search for matching dynamic files in mocksDir
+    const mockFiles = this.getAllMockFiles(this.mocksDir)
+      .filter(f => {
+        const fileRoute = path.relative(this.mocksDir, f).replace(/\\/g, '/');
+        const isMethodMatch = fileRoute.startsWith(`${method}-`) || path.basename(f).startsWith(`${method}-`);
+        return isMethodMatch && f.endsWith('.json') && !f.endsWith('.meta.json');
+      });
+
     for (const file of mockFiles) {
-      const fileRoute = file.slice(`${method}-`.length, -'.json'.length);
+      // Get route relative to mocksDir
+      let fileRoute = path.relative(this.mocksDir, file);
+
+      // Normalize slashes for matching
+      fileRoute = fileRoute.replace(/\\/g, '/');
+
+      // Remove the method prefix which could be on the folder or the file
+      if (fileRoute.startsWith(`${method}-`)) {
+          fileRoute = fileRoute.slice(`${method}-`.length);
+      } else {
+          // If the prefix is on the filename
+          const basename = path.basename(fileRoute);
+          if (basename.startsWith(`${method}-`)) {
+             const dirName = path.dirname(fileRoute);
+             const routeWithoutMethod = basename.slice(`${method}-`.length);
+             fileRoute = dirName === '.' ? routeWithoutMethod : `${dirName}/${routeWithoutMethod}`;
+          }
+      }
+
+      // Remove .json
+      if (fileRoute.endsWith('.json')) {
+          fileRoute = fileRoute.slice(0, -'.json'.length);
+      }
+
+      // Add leading slash if needed for splitting
+      if (!fileRoute.startsWith('/')) {
+        fileRoute = `/${fileRoute}`;
+      }
+
       if (this.matchDynamic(fileRoute, parts)) {
-        return path.join(this.mocksDir, file);
+        return file;
       }
     }
     return null;
   }
 
+  getAllMockFiles(dirPath, arrayOfFiles = []) {
+    if (!fs.existsSync(dirPath)) return arrayOfFiles;
+
+    const files = fs.readdirSync(dirPath);
+
+    files.forEach((file) => {
+      const fullPath = path.join(dirPath, file);
+      if (fs.statSync(fullPath).isDirectory()) {
+        arrayOfFiles = this.getAllMockFiles(fullPath, arrayOfFiles);
+      } else {
+        arrayOfFiles.push(fullPath);
+      }
+    });
+
+    return arrayOfFiles;
+  }
+
   matchDynamic(pattern, pathParts) {
-    const pParts = pattern.split('/');
+    const pParts = pattern.split('/').filter(Boolean);
     if (pParts.length !== pathParts.length) return false;
     for (let i = 0; i < pParts.length; i++) {
       if (pParts[i].startsWith(':') && pParts[i].length > 1) continue;
