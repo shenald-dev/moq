@@ -24,11 +24,8 @@ Need to mock an API quickly?
 ## 🚀 Quick Start
 
 ```bash
-# 1️⃣ Install (macOS/Linux)
-curl -sSfL https://moq.dev/install.sh | sh
-
-# Or download binary directly:
-# https://github.com/shenald-dev/moq/releases
+# 1️⃣ Install globally via npm
+npm install -g moq
 
 # 2️⃣ Create mocks folder
 mkdir mocks
@@ -48,14 +45,12 @@ That's it. You're mocking.
 
 ## 📁 Mock File Conventions
 
-File naming: `<METHOD>-<path>.json`
+File naming: `<METHOD>-<path>.json` (or you can use folders)
 
-- `GET-/api/users.json` → `GET /api/users` returns file contents
-- `POST-/api/login.json` → `POST /api/login` returns file
-- `GET-/api/users/:id.json` → `GET /api/users/123` (dynamic `:id`)
-- `404.json` → default 404 response (optional)
-
-All headers, status codes supported via sibling `.meta.json` files (advanced).
+- `mocks/GET-/api/users.json` → `GET /api/users`
+- `mocks/POST-/api/login.json` → `POST /api/login`
+- `mocks/GET-/api/users/:id.json` → `GET /api/users/123` (dynamic `:id`)
+- `mocks/404.json` → default 404 response (optional)
 
 ---
 
@@ -63,10 +58,7 @@ All headers, status codes supported via sibling `.meta.json` files (advanced).
 
 ```bash
 # Proxy mode (fallback to real API)
-moq proxy https://api.example.com
-
-# Record mode (capture real responses)
-moq record -o mocks/
+moq --proxy https://api.example.com
 
 # Custom port
 moq -p 8080
@@ -85,14 +77,17 @@ moq --no-reload
 ```bash
 git clone https://github.com/shenald-dev/moq.git
 cd moq
-go mod tidy
-go run cmd/moq/main.go
+npm install
+npm start
 
 # Run tests
-go test ./...
+npm test
 
 # Build binary
-go build -o moq cmd/moq/main.go
+npm run build:bin
+
+# Backup mocks (Self-Healing)
+npm run backup-mocks
 ```
 
 ---

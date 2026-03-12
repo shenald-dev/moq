@@ -11,6 +11,7 @@
     "dev": "nodemon src/index.js",
     "test": "node tests/test.js",
     "build:bin": "pkg . --out-path bin/",
+    "backup-mocks": "tar -czvf mocks_backup.tar.gz ./mocks",
     "prepublishOnly": "npm test"
   },
   "keywords": [
@@ -25,8 +26,10 @@
   "author": "shenald.dev",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.19.2",
     "chokidar": "^3.5.3",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.3.1",
+    "helmet": "^8.1.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
