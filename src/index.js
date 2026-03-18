@@ -185,6 +185,14 @@ class MoqServer {
       });
     });
 
+    // Timeout after 10s to prevent hanging on slow/unresponsive upstreams
+    proxyReq.setTimeout(10000, () => {
+      proxyReq.destroy();
+      if (!res.headersSent) {
+        res.status(504).json({ error: 'Gateway timeout' });
+      }
+    });
+
     proxyReq.on('error', err => {
       console.error('Proxy error:', err.message);
       res.status(502).json({ error: 'Bad gateway' });
