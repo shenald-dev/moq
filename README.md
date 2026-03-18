@@ -49,7 +49,7 @@ File naming: `<METHOD>-<path>.json` (or you can use folders)
 
 - `mocks/GET-/api/users.json` → `GET /api/users`
 - `mocks/POST-/api/login.json` → `POST /api/login`
-- `mocks/GET-/api/users/:id.json` → `GET /api/users/123` (dynamic `:id`)
+- `mocks/GET-/api/users/_id.json` → `GET /api/users/123` (dynamic `_id`)
 - `mocks/404.json` → default 404 response (optional)
 
 ---

@@ -205,7 +205,7 @@ class MoqServer {
     const pParts = pattern.split('/').filter(Boolean);
     if (pParts.length !== pathParts.length) return false;
     for (let i = 0; i < pParts.length; i++) {
-      if (pParts[i].startsWith(':') && pParts[i].length > 1) continue;
+      if ((pParts[i].startsWith(':') || pParts[i].startsWith('_')) && pParts[i].length > 1) continue;
       if (pParts[i] !== pathParts[i]) return false;
     }
     return true;
