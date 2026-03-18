@@ -17,6 +17,7 @@ class MoqServer {
     this.proxyTarget = options.proxyTarget;
     this.noReload = options.noReload || false;
     this.app = express();
+    this.mockFilesCache = null;
     this.setupRoutes();
     this.setupMiddleware();
 
@@ -102,7 +103,7 @@ class MoqServer {
     // Try dynamic: if /api/users/123 doesn't match, try /api/users/:id.json
     const parts = route.split('/');
     // Look for any file that matches pattern with :param
-    const mockFiles = fs.readdirSync(this.mocksDir).filter(f => f.startsWith(`${method}-`));
+    const mockFiles = this.getMockFiles().filter(f => f.startsWith(`${method}-`));
     for (const file of mockFiles) {
       const fileRoute = file.slice(`${method}-`.length, -'.json'.length);
       if (this.matchDynamic(fileRoute, parts)) {
@@ -110,6 +111,16 @@ class MoqServer {
       }
     }
     return null;
+  }
+
+  getMockFiles() {
+    if (this.mockFilesCache) return this.mockFilesCache;
+    if (!fs.existsSync(this.mocksDir)) {
+      this.mockFilesCache = [];
+      return this.mockFilesCache;
+    }
+    this.mockFilesCache = fs.readdirSync(this.mocksDir);
+    return this.mockFilesCache;
   }
 
   matchDynamic(pattern, pathParts) {
@@ -200,9 +211,8 @@ class MoqServer {
   }
 
   reloadMocks() {
-    // In-memory cache not implemented yet; for now just log
-    console.log('🔄 Mocks reloaded (in-memory cache would refresh here)');
-    // Future: re-scan directory and update route mappings
+    this.mockFilesCache = null;
+    console.log('🔄 Mocks reloaded');
   }
 
   start() {
