@@ -94,6 +94,21 @@ async function runTests() {
     failed++;
   }
 
+  // Test 4: dynamic route mock served
+  try {
+    const r = await request('GET', '/api/users/123', port);
+    if (r.status === 200 && r.body && r.body.id === 123) {
+      console.log('✅ Dynamic Mock GET /api/users/123');
+      passed++;
+    } else {
+      console.log('❌ Dynamic Mock GET failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Dynamic Mock GET error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 
