@@ -119,8 +119,23 @@ class MoqServer {
       this.mockFilesCache = [];
       return this.mockFilesCache;
     }
-    this.mockFilesCache = fs.readdirSync(this.mocksDir);
+    this.mockFilesCache = this.readDirRecursive(this.mocksDir, this.mocksDir);
     return this.mockFilesCache;
+  }
+
+  readDirRecursive(dir, baseDir) {
+    let results = [];
+    const list = fs.readdirSync(dir, { withFileTypes: true });
+    for (const dirent of list) {
+      const fullPath = path.join(dir, dirent.name);
+      const relPath = path.relative(baseDir, fullPath);
+      if (dirent.isDirectory()) {
+        results = results.concat(this.readDirRecursive(fullPath, baseDir));
+      } else {
+        results.push(relPath.split(path.sep).join('/'));
+      }
+    }
+    return results;
   }
 
   matchDynamic(pattern, pathParts) {
