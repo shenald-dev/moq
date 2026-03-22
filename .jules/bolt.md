@@ -1,16 +1,7 @@
-
-## 2024-03-18 — Caching expensive synchronous file operations
-
-Learning:
-In `moq`, dynamic route resolution (`/api/users/:id.json`) and 404 fallbacks were calling `fs.readdirSync` on every single unmatched request. This acts as a synchronous blocking performance bottleneck during high concurrency.
-
-Action:
-Future runs on similar file-system-based routing applications should consider caching the results of directory reads (`fs.readdirSync`) if hot-reload functionality can correctly clear that cache on file changes.
-
-## 2023-10-25 — Fix dynamic route matching by recursive directory lookup
+## 2024-05-24 — Proxying Binary/Streamed Responses with Express
 
 Learning:
-The zero-config mock server relied on `fs.readdirSync` without recursive flag, resulting in dynamic routing failure when mock files (`:id.json`) were nested inside directories matching path parts (e.g., `mocks/GET-/api/users/:id.json`).
+When writing an HTTP proxy using `http.request` within an Express middleware stack, using Express's `res.send()` to forward the proxy response is flawed. It buffers the entire response in memory (bad for large files), attempts to serialize binary data to strings, and can incorrectly inject a `Transfer-Encoding: chunked` header which breaks clients if `Content-Length` is also present. Additionally, if `express.json()` has run beforehand, the original `req` stream is consumed and cannot be piped to the upstream server, causing timeouts for POST/PUT requests unless explicitly reconstructed.
 
 Action:
-Replaced the non-recursive `fs.readdirSync` with a custom `readDirRecursive` method to correctly parse all nested files within `mocksDir`. Ensure future file enumeration tasks correctly account for nested directory structures.
+Directly stream the upstream response via `proxyRes.pipe(res)` after copying status codes and headers to avoid memory bloating and binary corruption. For outgoing requests, always check if `req.body` was already consumed by Express's JSON body-parser by checking `req.headers['content-type'].includes('application/json')`, and manually reconstruct and write the body payload instead of relying on `req.pipe(proxyReq)`.
