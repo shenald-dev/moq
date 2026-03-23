@@ -189,15 +189,11 @@ class MoqServer {
 
     const transport = parsed.protocol === 'https:' ? https : http;
     const proxyReq = transport.request(options, proxyRes => {
-      let body = '';
-      proxyRes.on('data', chunk => body += chunk);
-      proxyRes.on('end', () => {
-        try {
-          res.status(proxyRes.statusCode).set(proxyRes.headers).send(JSON.parse(body));
-        } catch {
-          res.status(proxyRes.statusCode).send(body);
-        }
-      });
+      res.status(proxyRes.statusCode);
+      for (const [key, value] of Object.entries(proxyRes.headers)) {
+        res.setHeader(key, value);
+      }
+      proxyRes.pipe(res);
     });
 
     // Timeout after 10s to prevent hanging on slow/unresponsive upstreams
@@ -210,10 +206,21 @@ class MoqServer {
 
     proxyReq.on('error', err => {
       console.error('Proxy error:', err.message);
-      res.status(502).json({ error: 'Bad gateway' });
+      if (!res.headersSent) {
+        res.status(502).json({ error: 'Bad gateway' });
+      }
     });
 
-    req.pipe(proxyReq);
+    // express.json() might have already read the body.
+    const contentType = req.headers['content-type'] || '';
+    if (req.body !== undefined && Object.keys(req.body).length >= 0 && contentType.includes('application/json')) {
+      const bodyData = JSON.stringify(req.body);
+      proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+      proxyReq.write(bodyData);
+      proxyReq.end();
+    } else {
+      req.pipe(proxyReq);
+    }
   }
 
   setupHotReload() {
