@@ -51,13 +51,14 @@ class MoqServer {
   }
 
   async handleRequest(req, res) {
+    // Try to find mock file
+    const mockFile = this.findMockFile(req.method, req.path);
+
     // If proxy mode and target set, and no matching mock, proxy
-    if (this.proxyMode && this.proxyTarget && !this.hasMock(req.method, req.path)) {
+    if (this.proxyMode && this.proxyTarget && !mockFile) {
       return this.proxyRequest(req, res);
     }
 
-    // Try to find mock file
-    const mockFile = this.findMockFile(req.method, req.path);
     if (mockFile) {
       try {
         const content = fs.readFileSync(mockFile);
@@ -77,20 +78,11 @@ class MoqServer {
   }
 
   hasMock(method, path) {
-    const mockPath = this.resolveMockPath(method, path);
-    return fs.existsSync(mockPath);
+    return this.findMockFile(method, path) !== null;
   }
 
   findMockFile(method, path) {
-    // Check static route
-    const staticPath = this.resolveMockPath(method, path);
-    if (fs.existsSync(staticPath)) return staticPath;
-
-    // Check dynamic routes (e.g., /api/users/:id)
-    const dynamicPath = this.resolveMockPath(method, this.normalizePath(path));
-    if (fs.existsSync(dynamicPath)) return dynamicPath;
-
-    return null;
+    return this.resolveMockPath(method, path);
   }
 
   resolveMockPath(method, route) {
@@ -107,7 +99,8 @@ class MoqServer {
     for (const file of mockFiles) {
       const fileRoute = file.slice(`${method}-`.length, -'.json'.length);
       if (this.matchDynamic(fileRoute, parts)) {
-        return path.join(this.mocksDir, file);
+        const fullPath = path.join(this.mocksDir, file);
+        if (fs.existsSync(fullPath)) return fullPath;
       }
     }
     return null;
