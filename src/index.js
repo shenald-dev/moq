@@ -18,6 +18,7 @@ class MoqServer {
     this.noReload = options.noReload || false;
     this.app = express();
     this.mockFilesCache = null;
+    this.mockDataCache = null;
     this.setupRoutes();
     this.setupMiddleware();
 
@@ -61,8 +62,15 @@ class MoqServer {
 
     if (mockFile) {
       try {
-        const content = fs.readFileSync(mockFile);
-        const data = JSON.parse(content);
+        let data;
+        if (this.mockDataCache && Object.prototype.hasOwnProperty.call(this.mockDataCache, mockFile)) {
+          data = this.mockDataCache[mockFile];
+        } else {
+          const content = fs.readFileSync(mockFile);
+          data = JSON.parse(content);
+          this.mockDataCache = this.mockDataCache || {};
+          this.mockDataCache[mockFile] = data;
+        }
         // Optionally read meta file for status/headers (future)
         res.status(200).json(data);
         console.log(`✅ Served mock: ${req.method} ${req.path} → ${path.basename(mockFile)}`);
@@ -89,18 +97,23 @@ class MoqServer {
     // Normalize route to file pattern
     // Convert /api/users/123 → /api/users/:id.json if exists, or exact match
     route = route.replace(/\/+$/, ''); // remove trailing slash
-    const candidate = path.join(this.mocksDir, `${method}-${route}.json`);
-    if (fs.existsSync(candidate)) return candidate;
+
+    const mockFiles = this.getMockFiles();
+    const exactMatchPath = `${method}-${route}.json`;
+
+    // Fast path: exact match in cache
+    if (mockFiles.includes(exactMatchPath)) {
+      return path.join(this.mocksDir, exactMatchPath);
+    }
 
     // Try dynamic: if /api/users/123 doesn't match, try /api/users/:id.json
     const parts = route.split('/');
     // Look for any file that matches pattern with :param
-    const mockFiles = this.getMockFiles().filter(f => f.startsWith(`${method}-`));
-    for (const file of mockFiles) {
+    const dynamicCandidates = mockFiles.filter(f => f.startsWith(`${method}-`));
+    for (const file of dynamicCandidates) {
       const fileRoute = file.slice(`${method}-`.length, -'.json'.length);
       if (this.matchDynamic(fileRoute, parts)) {
-        const fullPath = path.join(this.mocksDir, file);
-        if (fs.existsSync(fullPath)) return fullPath;
+        return path.join(this.mocksDir, file);
       }
     }
     return null;
@@ -150,10 +163,17 @@ class MoqServer {
   }
 
   notFoundHandler(req, res) {
-    const fallback = path.join(this.mocksDir, '404.json');
-    if (fs.existsSync(fallback)) {
+    if (this.getMockFiles().includes('404.json')) {
+      const fallback = path.join(this.mocksDir, '404.json');
       try {
-        const data = JSON.parse(fs.readFileSync(fallback));
+        let data;
+        if (this.mockDataCache && Object.prototype.hasOwnProperty.call(this.mockDataCache, fallback)) {
+          data = this.mockDataCache[fallback];
+        } else {
+          data = JSON.parse(fs.readFileSync(fallback));
+          this.mockDataCache = this.mockDataCache || {};
+          this.mockDataCache[fallback] = data;
+        }
         res.status(404).json(data);
       } catch {
         res.status(404).json({ error: 'Not found' });
@@ -235,6 +255,7 @@ class MoqServer {
 
   reloadMocks() {
     this.mockFilesCache = null;
+    this.mockDataCache = null;
     console.log('🔄 Mocks reloaded');
   }
 
