@@ -18,6 +18,9 @@ class MoqServer {
     this.noReload = options.noReload || false;
     this.app = express();
     this.mockFilesCache = null;
+    this.mockFilesSet = null;
+    this.dynamicRoutes = null;
+    this.routeCache = new Map();
     this.mockDataCache = null;
     this.setupRoutes();
     this.setupMiddleware();
@@ -94,28 +97,57 @@ class MoqServer {
   }
 
   resolveMockPath(method, route) {
+    // Directory traversal prevention
+    if (route.includes('..') || route.includes('%2e%2e')) {
+      return null;
+    }
+
     // Normalize route to file pattern
     // Convert /api/users/123 → /api/users/:id.json if exists, or exact match
     route = route.replace(/\/+$/, ''); // remove trailing slash
 
-    const mockFiles = this.getMockFiles();
+    const cacheKey = `${method}:${route}`;
+    if (this.routeCache.has(cacheKey)) {
+      return this.routeCache.get(cacheKey);
+    }
+
+    // Prevent OOM from malicious probing
+    if (this.routeCache.size > 10000) {
+      this.routeCache.clear();
+    }
+
+    this.getMockFiles(); // ensure caches are populated
     const exactMatchPath = `${method}-${route}.json`;
 
-    // Fast path: exact match in cache
-    if (mockFiles.includes(exactMatchPath)) {
-      return path.join(this.mocksDir, exactMatchPath);
+    // Fast path: exact match in set
+    if (this.mockFilesSet.has(exactMatchPath)) {
+      const p = path.join(this.mocksDir, exactMatchPath);
+      this.routeCache.set(cacheKey, p);
+      return p;
     }
 
     // Try dynamic: if /api/users/123 doesn't match, try /api/users/:id.json
     const parts = route.split('/');
-    // Look for any file that matches pattern with :param
-    const dynamicCandidates = mockFiles.filter(f => f.startsWith(`${method}-`));
-    for (const file of dynamicCandidates) {
-      const fileRoute = file.slice(`${method}-`.length, -'.json'.length);
-      if (this.matchDynamic(fileRoute, parts)) {
-        return path.join(this.mocksDir, file);
+
+    for (const candidate of this.dynamicRoutes) {
+      if (candidate.method === method && candidate.parts.length === parts.length) {
+        let match = true;
+        for (let i = 0; i < candidate.parts.length; i++) {
+          if (candidate.parts[i].startsWith(':') && candidate.parts[i].length > 1) continue;
+          if (candidate.parts[i] !== parts[i]) {
+            match = false;
+            break;
+          }
+        }
+        if (match) {
+          const p = path.join(this.mocksDir, candidate.file);
+          this.routeCache.set(cacheKey, p);
+          return p;
+        }
       }
     }
+
+    this.routeCache.set(cacheKey, null);
     return null;
   }
 
@@ -123,9 +155,30 @@ class MoqServer {
     if (this.mockFilesCache) return this.mockFilesCache;
     if (!fs.existsSync(this.mocksDir)) {
       this.mockFilesCache = [];
+      this.mockFilesSet = new Set();
+      this.dynamicRoutes = [];
       return this.mockFilesCache;
     }
     this.mockFilesCache = this.readDirRecursive(this.mocksDir, this.mocksDir);
+    this.mockFilesSet = new Set(this.mockFilesCache);
+
+    this.dynamicRoutes = [];
+    for (const file of this.mockFilesCache) {
+      const methodEnd = file.indexOf('-');
+      if (methodEnd === -1 || !file.endsWith('.json')) continue;
+
+      const method = file.slice(0, methodEnd);
+      const fileRoute = file.slice(methodEnd + 1, -'.json'.length);
+
+      if (fileRoute.includes(':')) {
+        this.dynamicRoutes.push({
+          method,
+          file,
+          parts: fileRoute.split('/')
+        });
+      }
+    }
+
     return this.mockFilesCache;
   }
 
@@ -256,6 +309,9 @@ class MoqServer {
   reloadMocks() {
     this.mockFilesCache = null;
     this.mockDataCache = null;
+    this.mockFilesSet = null;
+    this.dynamicRoutes = null;
+    this.routeCache.clear();
     console.log('🔄 Mocks reloaded');
   }
 
