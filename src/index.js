@@ -11,9 +11,6 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const url = require('url');
-const http = require('http');
-const https = require('https');
-const url = require('url');
 
 class MoqServer {
   constructor(options = {}) {
@@ -59,10 +56,14 @@ class MoqServer {
     });
 
     // Catch-all for mocks
-    this.app.all('*', this.handleRequest.bind(this));
+    this.app.all('*', (req, res, next) => {
+      this.handleRequest(req, res).catch(next);
+    });
 
     // 404 fallback
-    this.app.use(this.notFoundHandler.bind(this));
+    this.app.use((req, res, next) => {
+      this.notFoundHandler(req, res).catch(next);
+    });
   }
 
   async handleRequest(req, res) {
@@ -80,7 +81,7 @@ class MoqServer {
         if (this.mockDataCache && Object.prototype.hasOwnProperty.call(this.mockDataCache, mockFile)) {
           data = this.mockDataCache[mockFile];
         } else {
-          const content = fs.readFileSync(mockFile);
+          const content = await fs.promises.readFile(mockFile, 'utf8');
           data = JSON.parse(content);
           this.mockDataCache = this.mockDataCache || {};
           this.mockDataCache[mockFile] = data;
@@ -226,7 +227,7 @@ class MoqServer {
     return path; // keep as-is for now
   }
 
-  notFoundHandler(req, res) {
+  async notFoundHandler(req, res) {
     if (this.getMockFiles().includes('404.json')) {
       const fallback = path.join(this.mocksDir, '404.json');
       try {
@@ -234,7 +235,8 @@ class MoqServer {
         if (this.mockDataCache && Object.prototype.hasOwnProperty.call(this.mockDataCache, fallback)) {
           data = this.mockDataCache[fallback];
         } else {
-          data = JSON.parse(fs.readFileSync(fallback));
+          const content = await fs.promises.readFile(fallback, 'utf8');
+          data = JSON.parse(content);
           this.mockDataCache = this.mockDataCache || {};
           this.mockDataCache[fallback] = data;
         }
@@ -250,19 +252,18 @@ class MoqServer {
   proxyRequest(req, res) {
     const target = url.resolve(this.proxyTarget, req.originalUrl || req.url);
     const parsed = new URL(target);
-const isHttps = parsed.protocol === 'https:';
+    const isHttps = parsed.protocol === 'https:';
     const transport = isHttps ? https : http;
-const isHttps = parsed.protocol === 'https:';
-    const transport = isHttps ? https : http;
-        const options = {
+    const options = {
       hostname: parsed.hostname,
       port: parsed.port || (isHttps ? 443 : 80),
       path: parsed.pathname + parsed.search,
       method: req.method,
-      headers: { ...req.headers, host: parsed.hostname }
+      headers: { ...req.headers, host: parsed.hostname },
+      agent: isHttps ? this.httpsAgent : this.httpAgent
     };
 
-        const proxyReq = transport.request(options, proxyRes => {
+    const proxyReq = transport.request(options, proxyRes => {
       res.status(proxyRes.statusCode);
       for (const [key, value] of Object.entries(proxyRes.headers)) {
         res.setHeader(key, value);
