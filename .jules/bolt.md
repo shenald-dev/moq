@@ -12,11 +12,3 @@ The `hasMock` function in the mock server checked for strict exact paths, causin
 
 Action:
 Refactor request hot paths to compute truthy/existential states simultaneously with path resolution, caching the lookup in a variable to avoid redundant `fs.existsSync` and regex matching. Ensure proxy fallbacks rely on the full dynamic-route-aware `findMockFile` instead of an incomplete `hasMock`.
-
-## 2024-05-15 — proxyRequest Performance Bottleneck
-
-Learning:
-In the `MoqServer`'s `proxyRequest` method, `require('http')` and `require('https')` were happening on every request. Even worse, `keepAlive` Agent instances were created inline on every proxy request, stored in a local variable, and completely ignored because they were never passed in the `http.request` options.
-
-Action:
-Moved dependency requires to the file level. Initialized `httpAgent` and `httpsAgent` once during `MoqServer` construction. Passed the corresponding agent properly into `transport.request` options. This fixes a massive overhead per request and ensures actual TCP connection pooling is utilized.

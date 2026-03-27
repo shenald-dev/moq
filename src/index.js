@@ -8,9 +8,6 @@ const express = require('express');
 const path = require('path');
 const chokidar = require('chokidar');
 const fs = require('fs');
-const http = require('http');
-const https = require('https');
-const url = require('url');
 
 class MoqServer {
   constructor(options = {}) {
@@ -19,10 +16,6 @@ class MoqServer {
     this.proxyMode = options.proxy || false;
     this.proxyTarget = options.proxyTarget;
     this.noReload = options.noReload || false;
-
-    // HTTP/HTTPS connection pooling for proxy mode
-    this.httpAgent = new http.Agent({ keepAlive: true });
-    this.httpsAgent = new https.Agent({ keepAlive: true });
     this.app = express();
     this.mockFilesCache = null;
     this.mockDataCache = null;
@@ -191,21 +184,23 @@ class MoqServer {
   }
 
   proxyRequest(req, res) {
+    const http = require('http');
+    const https = require('https');
+    const url = require('url');
+
     const target = url.resolve(this.proxyTarget, req.originalUrl || req.url);
     const parsed = new URL(target);
-
-    const isHttps = parsed.protocol === 'https:';
-    const transport = isHttps ? https : http;
+    const proxy = https.request ? new https.Agent({ keepAlive: true }) : new http.Agent({ keepAlive: true });
 
     const options = {
       hostname: parsed.hostname,
-      port: parsed.port || (isHttps ? 443 : 80),
+      port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
       path: parsed.pathname + parsed.search,
       method: req.method,
-      headers: { ...req.headers, host: parsed.hostname },
-      agent: isHttps ? this.httpsAgent : this.httpAgent
+      headers: { ...req.headers, host: parsed.hostname }
     };
 
+    const transport = parsed.protocol === 'https:' ? https : http;
     const proxyReq = transport.request(options, proxyRes => {
       res.status(proxyRes.statusCode);
       for (const [key, value] of Object.entries(proxyRes.headers)) {
