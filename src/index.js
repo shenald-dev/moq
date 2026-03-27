@@ -11,6 +11,9 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const url = require('url');
+const http = require('http');
+const https = require('https');
+const url = require('url');
 
 class MoqServer {
   constructor(options = {}) {
@@ -247,6 +250,8 @@ class MoqServer {
   proxyRequest(req, res) {
     const target = url.resolve(this.proxyTarget, req.originalUrl || req.url);
     const parsed = new URL(target);
+const isHttps = parsed.protocol === 'https:';
+    const transport = isHttps ? https : http;
 const isHttps = parsed.protocol === 'https:';
     const transport = isHttps ? https : http;
         const options = {
