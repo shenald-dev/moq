@@ -209,24 +209,6 @@ class MoqServer {
     return results;
   }
 
-  matchDynamic(pattern, pathParts) {
-    const pParts = pattern.split('/');
-    if (pParts.length !== pathParts.length) return false;
-    for (let i = 0; i < pParts.length; i++) {
-      if (pParts[i].startsWith(':') && pParts[i].length > 1) continue;
-      if (pParts[i] !== pathParts[i]) return false;
-    }
-    return true;
-  }
-
-  normalizePath(path) {
-    // For dynamic matching, convert /api/users/123 to /api/users/:id
-    const parts = path.split('/');
-    // If we have /api/users/:id.json file, we want to treat any /api/users/* as match
-    // This is simplified; real implementation would need param name inference
-    return path; // keep as-is for now
-  }
-
   async notFoundHandler(req, res) {
     if (this.getMockFiles().includes('404.json')) {
       const fallback = path.join(this.mocksDir, '404.json');

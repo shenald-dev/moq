@@ -85,14 +85,14 @@ moq --no-reload
 ```bash
 git clone https://github.com/shenald-dev/moq.git
 cd moq
-go mod tidy
-go run cmd/moq/main.go
+npm install
+npm start
 
 # Run tests
-go test ./...
+npm test
 
 # Build binary
-go build -o moq cmd/moq/main.go
+npm run build:bin
 ```
 
 ---
@@ -108,10 +108,10 @@ No YAML complexity. No GUI clicks. Just files + one command.
 
 ## 🛠️ Tech Stack
 
-- **Go** — single binary, zero runtime
-- **chi router** — lightweight, fast
-- **fsnotify** — hot reload
-- **cobra** — CLI
+- **Node.js** — powerful asynchronous runtime
+- **Express** — fast, unopinionated web framework
+- **chokidar** — hot reload
+- **pkg** — single binary compilation
 
 ---
 
