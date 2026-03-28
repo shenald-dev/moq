@@ -39,3 +39,11 @@ It also contained a duplicate declaration for `isHttps` and `transport` inside t
 
 Action:
 Removed the duplicate declarations to ensure the Node.js process could actually parse and run the script, which unblocked the entire test suite.
+
+## 2024-05-15 - Express Middleware Fallback Bug
+
+Learning:
+In the Express application setup, the catch-all middleware (`app.all('*')`) was eagerly terminating unhandled routes with a hardcoded `res.status(404).json()` response. This entirely bypassed the subsequent `notFoundHandler` middleware (`app.use`), making the intended feature of serving a custom `404.json` mock file impossible.
+
+Action:
+Modified `handleRequest` to take the `next` callback and invoke it when no mock file is found, correctly delegating responsibility to the next matching middleware in the Express chain. This ensures custom 404 configurations work as designed.

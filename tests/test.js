@@ -79,22 +79,48 @@ async function runTests() {
     failed++;
   }
 
-  // Test 3: 404 fallback
+  // Test 3: 404 fallback without custom 404.json
   try {
     const r = await request('GET', '/unknown', port);
-    if (r.status === 404) {
-      console.log('✅ 404 response');
+    if (r.status === 404 && r.body && r.body.error === 'Not found') {
+      console.log('✅ 404 response (default)');
       passed++;
     } else {
-      console.log('❌ 404 failed', r);
+      console.log('❌ 404 (default) failed', r);
       failed++;
     }
   } catch (e) {
-    console.log('❌ 404 error', e);
+    console.log('❌ 404 (default) error', e);
     failed++;
   }
 
-  // Test 4: dynamic route mock served
+  // Test 4: 404 fallback with custom 404.json
+  try {
+    const fs = require('fs');
+    fs.writeFileSync(path.join(mocksDir, '404.json'), JSON.stringify({ custom: "404", message: "Page not found" }));
+    // force reload mocks since test uses noReload: true but wait, it uses fs.readFileSync every time if noDataCache is set or we can restart the server or just clear cache
+    server.reloadMocks(); // Manually trigger reload
+
+    const r = await request('GET', '/unknown2', port);
+    if (r.status === 404 && r.body && r.body.custom === '404') {
+      console.log('✅ 404 response (custom 404.json)');
+      passed++;
+    } else {
+      console.log('❌ 404 (custom 404.json) failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ 404 (custom 404.json) error', e);
+    failed++;
+  } finally {
+    const fs = require('fs');
+    if (fs.existsSync(path.join(mocksDir, '404.json'))) {
+      fs.unlinkSync(path.join(mocksDir, '404.json'));
+    }
+    server.reloadMocks(); // reset
+  }
+
+  // Test 5: dynamic route mock served
   try {
     const r = await request('GET', '/api/users/123', port);
     if (r.status === 200 && r.body && r.body.id === 123) {

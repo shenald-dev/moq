@@ -57,7 +57,7 @@ class MoqServer {
 
     // Catch-all for mocks
     this.app.all('*', (req, res, next) => {
-      this.handleRequest(req, res).catch(next);
+      this.handleRequest(req, res, next).catch(next);
     });
 
     // 404 fallback
@@ -66,7 +66,7 @@ class MoqServer {
     });
   }
 
-  async handleRequest(req, res) {
+  async handleRequest(req, res, next) {
     // Try to find mock file
     const mockFile = this.findMockFile(req.method, req.path);
 
@@ -97,7 +97,7 @@ class MoqServer {
     }
 
     // No mock found
-    res.status(404).json({ error: 'Not found' });
+    next();
   }
 
   hasMock(method, path) {
