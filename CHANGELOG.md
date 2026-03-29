@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.1
+
+* **Lifecycle / Maintenance:**
+  * Pruned dead and unreferenced code (`hasMock`) from `src/index.js`.
+  * Recreated the missing `bin/cli.js` entrypoint needed by `pkg` to compile binary correctly.
+
 ## v0.2.0
 
 * **Lifecycle / Maintenance:**

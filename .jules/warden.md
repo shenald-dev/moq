@@ -1,3 +1,11 @@
+2026-03-29 — Assessment & Lifecycle
+
+Observation / Pruned:
+Pruned dead and unreferenced code (`hasMock`) from `src/index.js`.
+
+Alignment / Deferred:
+Recreated the missing `bin/cli.js` entrypoint needed by `pkg` to compile binary. Ran safe dependency bumps. Patch version bumped to v0.2.1.
+
 2024-03-28 — Assessment & Lifecycle
 
 Observation / Pruned:
