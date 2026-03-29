@@ -100,10 +100,6 @@ class MoqServer {
     next();
   }
 
-  hasMock(method, path) {
-    return this.findMockFile(method, path) !== null;
-  }
-
   findMockFile(method, path) {
     return this.resolveMockPath(method, path);
   }

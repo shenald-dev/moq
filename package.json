@@ -1,6 +1,6 @@
 {
   "name": "moq",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "HTTP mocks at the speed of thought. Zero-config mock server.",
   "main": "src/index.js",
   "bin": {
