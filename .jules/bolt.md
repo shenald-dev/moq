@@ -47,3 +47,11 @@ In the Express application setup, the catch-all middleware (`app.all('*')`) was 
 
 Action:
 Modified `handleRequest` to take the `next` callback and invoke it when no mock file is found, correctly delegating responsibility to the next matching middleware in the Express chain. This ensures custom 404 configurations work as designed.
+
+## 2024-05-15 - Unnecessary and Breaking Body Parsing
+
+Learning:
+The `express.json()` middleware was used unconditionally in `setupMiddleware()`. This caused issues in proxy mode because Express reads the incoming request body and sets `req.body`, leaving the request stream empty. Consequently, `req.pipe(proxyReq)` failed to pass the body downstream. The previous workaround was poorly serializing `req.body` back into JSON and recalculating `Content-Length`, which broke non-JSON content types and was inherently inefficient, allocating large buffers and destroying streaming performance. Since the server does not need to inspect the payload body for mock matching, it shouldn't be parsed at all.
+
+Action:
+Removed `express.json()` and the custom body serialization logic inside `proxyRequest`. Now, bodies stream transparently via `req.pipe(proxyReq)`, maintaining headers, lowering memory footprint, and supporting all content types safely.

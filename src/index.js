@@ -44,9 +44,6 @@ class MoqServer {
       console.log(`[${req.method}] ${req.path}`);
       next();
     });
-
-    // Parse JSON bodies
-    this.app.use(express.json());
   }
 
   setupRoutes() {
@@ -264,16 +261,7 @@ class MoqServer {
       }
     });
 
-    // express.json() might have already read the body.
-    const contentType = req.headers['content-type'] || '';
-    if (req.body !== undefined && Object.keys(req.body).length >= 0 && contentType.includes('application/json')) {
-      const bodyData = JSON.stringify(req.body);
-      proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-      proxyReq.write(bodyData);
-      proxyReq.end();
-    } else {
-      req.pipe(proxyReq);
-    }
+    req.pipe(proxyReq);
   }
 
   setupHotReload() {
