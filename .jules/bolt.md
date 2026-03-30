@@ -55,3 +55,11 @@ The `express.json()` middleware was used unconditionally in `setupMiddleware()`.
 
 Action:
 Removed `express.json()` and the custom body serialization logic inside `proxyRequest`. Now, bodies stream transparently via `req.pipe(proxyReq)`, maintaining headers, lowering memory footprint, and supporting all content types safely.
+
+## 2024-03-30 — Optimize Hot-Path JSON Serialization
+
+Learning:
+For static mock responses, reading a file into memory, calling `JSON.parse()`, caching the object, and then calling Express's `res.json()` re-serializes the data on every request. This redundant stringification creates noticeable latency on hot paths.
+
+Action:
+Read the file and use `JSON.parse()` solely for validation. Cache the original JSON string instead of the object, and serve it directly via `res.type('json').send(content)`. This significantly improves response times under high concurrency without losing JSON format validation.
