@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.2
+
+* **Lifecycle / Maintenance:**
+  * Pruned deprecated `url.resolve` usage in favor of modern `new URL()` to clean up the codebase.
+
 ## v0.2.1
 
 * **Lifecycle / Maintenance:**
