@@ -1,3 +1,11 @@
+2026-03-30 — Assessment & Lifecycle
+
+Observation / Pruned:
+Pruned deprecated `url.resolve` method from `src/index.js` as it's legacy and unnecessary, and removed the unused `url` module import. Replaced logic with modern URL API.
+
+Alignment / Deferred:
+Updated CHANGELOG.md to reflect the code cleanup. Bumped patch version to v0.2.2. Safe dependency bumps were evaluated (none required).
+
 2026-03-29 — Assessment & Lifecycle
 
 Observation / Pruned:
