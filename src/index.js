@@ -73,17 +73,17 @@ class MoqServer {
 
     if (mockFile) {
       try {
-        let data;
+        let content;
         if (this.mockDataCache && Object.prototype.hasOwnProperty.call(this.mockDataCache, mockFile)) {
-          data = this.mockDataCache[mockFile];
+          content = this.mockDataCache[mockFile];
         } else {
-          const content = await fs.promises.readFile(mockFile, 'utf8');
-          data = JSON.parse(content);
+          content = await fs.promises.readFile(mockFile, 'utf8');
+          JSON.parse(content); // Validate JSON
           this.mockDataCache = this.mockDataCache || {};
-          this.mockDataCache[mockFile] = data;
+          this.mockDataCache[mockFile] = content;
         }
         // Optionally read meta file for status/headers (future)
-        res.status(200).json(data);
+        res.status(200).type('json').send(content);
         console.log(`✅ Served mock: ${req.method} ${req.path} → ${path.basename(mockFile)}`);
       } catch (err) {
         console.error(`Mock error: ${err.message}`);
@@ -205,16 +205,16 @@ class MoqServer {
     if (this.getMockFiles().includes('404.json')) {
       const fallback = path.join(this.mocksDir, '404.json');
       try {
-        let data;
+        let content;
         if (this.mockDataCache && Object.prototype.hasOwnProperty.call(this.mockDataCache, fallback)) {
-          data = this.mockDataCache[fallback];
+          content = this.mockDataCache[fallback];
         } else {
-          const content = await fs.promises.readFile(fallback, 'utf8');
-          data = JSON.parse(content);
+          content = await fs.promises.readFile(fallback, 'utf8');
+          JSON.parse(content); // Validate JSON
           this.mockDataCache = this.mockDataCache || {};
-          this.mockDataCache[fallback] = data;
+          this.mockDataCache[fallback] = content;
         }
-        res.status(404).json(data);
+        res.status(404).type('json').send(content);
       } catch {
         res.status(404).json({ error: 'Not found' });
       }
