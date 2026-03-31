@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.3
+
+* **Lifecycle / Maintenance:**
+  * Pruned unused `supertest` dependency from `devDependencies`.
+  * Updated documentation to cover the new `/_health` endpoint.
+  * Bumped patch versions for dependencies to address maintenance.
+
 ## v0.2.2
 
 * **Lifecycle / Maintenance:**
