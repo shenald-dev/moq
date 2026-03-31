@@ -28,7 +28,7 @@ class MoqServer {
     this.mockFilesSet = null;
     this.dynamicRoutes = null;
     this.routeCache = new Map();
-    this.mockDataCache = null;
+    this.mockDataCache = new Map();
     this.setupRoutes();
     this.setupMiddleware();
 
@@ -74,13 +74,12 @@ class MoqServer {
     if (mockFile) {
       try {
         let content;
-        if (this.mockDataCache && Object.prototype.hasOwnProperty.call(this.mockDataCache, mockFile)) {
-          content = this.mockDataCache[mockFile];
+        if (this.mockDataCache.has(mockFile)) {
+          content = this.mockDataCache.get(mockFile);
         } else {
           content = await fs.promises.readFile(mockFile, 'utf8');
           JSON.parse(content); // Validate JSON
-          this.mockDataCache = this.mockDataCache || {};
-          this.mockDataCache[mockFile] = content;
+          this.mockDataCache.set(mockFile, content);
         }
         // Optionally read meta file for status/headers (future)
         res.status(200).type('json').send(content);
@@ -186,14 +185,13 @@ class MoqServer {
     return this.mockFilesCache;
   }
 
-  readDirRecursive(dir, baseDir) {
-    let results = [];
+  readDirRecursive(dir, baseDir, results = []) {
     const list = fs.readdirSync(dir, { withFileTypes: true });
     for (const dirent of list) {
       const fullPath = path.join(dir, dirent.name);
       const relPath = path.relative(baseDir, fullPath);
       if (dirent.isDirectory()) {
-        results = results.concat(this.readDirRecursive(fullPath, baseDir));
+        this.readDirRecursive(fullPath, baseDir, results);
       } else {
         results.push(relPath.split(path.sep).join('/'));
       }
@@ -202,17 +200,17 @@ class MoqServer {
   }
 
   async notFoundHandler(req, res) {
-    if (this.getMockFiles().includes('404.json')) {
+    this.getMockFiles(); // ensure caches are populated
+    if (this.mockFilesSet.has('404.json')) {
       const fallback = path.join(this.mocksDir, '404.json');
       try {
         let content;
-        if (this.mockDataCache && Object.prototype.hasOwnProperty.call(this.mockDataCache, fallback)) {
-          content = this.mockDataCache[fallback];
+        if (this.mockDataCache.has(fallback)) {
+          content = this.mockDataCache.get(fallback);
         } else {
           content = await fs.promises.readFile(fallback, 'utf8');
           JSON.parse(content); // Validate JSON
-          this.mockDataCache = this.mockDataCache || {};
-          this.mockDataCache[fallback] = content;
+          this.mockDataCache.set(fallback, content);
         }
         res.status(404).type('json').send(content);
       } catch {
@@ -259,6 +257,10 @@ class MoqServer {
       }
     });
 
+    req.on('aborted', () => {
+      proxyReq.destroy();
+    });
+
     req.pipe(proxyReq);
   }
 
@@ -281,7 +283,7 @@ class MoqServer {
 
   reloadMocks() {
     this.mockFilesCache = null;
-    this.mockDataCache = null;
+    this.mockDataCache.clear();
     this.mockFilesSet = null;
     this.dynamicRoutes = null;
     this.routeCache.clear();

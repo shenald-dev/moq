@@ -63,3 +63,6 @@ For static mock responses, reading a file into memory, calling `JSON.parse()`, c
 
 Action:
 Read the file and use `JSON.parse()` solely for validation. Cache the original JSON string instead of the object, and serve it directly via `res.type('json').send(content)`. This significantly improves response times under high concurrency without losing JSON format validation.
+## 2024-03-31 — Caching and memory allocation optimizations
+Learning: Plain object string caching causes prototype lookups which are slower and potentially dangerous compared to native Maps. Also Array.concat in recursive directory traversal allocates excess temporary arrays.
+Action: Converted caching logic to Map, replaced Array.concat with in-place passing of the result array. Also prevented upstream proxy hang when clients abort. Continue profiling node APIs.
