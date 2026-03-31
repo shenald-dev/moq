@@ -71,6 +71,9 @@ moq record -o mocks/
 # Custom port
 moq -p 8080
 
+# Health check (returns server status and mode)
+curl http://localhost:3000/_health
+
 # Custom mocks dir
 moq -d ./test-mocks
 
