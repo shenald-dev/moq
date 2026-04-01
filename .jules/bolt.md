@@ -66,3 +66,11 @@ Read the file and use `JSON.parse()` solely for validation. Cache the original J
 ## 2024-03-31 — Caching and memory allocation optimizations
 Learning: Plain object string caching causes prototype lookups which are slower and potentially dangerous compared to native Maps. Also Array.concat in recursive directory traversal allocates excess temporary arrays.
 Action: Converted caching logic to Map, replaced Array.concat with in-place passing of the result array. Also prevented upstream proxy hang when clients abort. Continue profiling node APIs.
+
+## 2024-05-15 - Proxy Path Resolution and Invalid Cache Overhead
+
+Learning:
+In the proxy logic, using `new URL(req.url, this.proxyTarget)` incorrectly strips the base path from `proxyTarget` if `req.url` starts with a slash. E.g. `new URL('/users', 'http://a/b')` becomes `http://a/users`. This silently breaks proxies targeting nested API base paths. Furthermore, invalid JSON mock files would cause repeated `fs.promises.readFile` and `JSON.parse` failures on every single request because the failure state was not cached.
+
+Action:
+Fixed proxy target URL construction to correctly concatenate the base proxy target path with the incoming request path. Implemented negative caching by storing `null` in `mockDataCache` upon `JSON.parse` failure, preventing severe I/O and CPU overhead on repeated requests to invalid mocks.

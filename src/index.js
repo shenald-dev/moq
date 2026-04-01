@@ -76,10 +76,16 @@ class MoqServer {
         let content;
         if (this.mockDataCache.has(mockFile)) {
           content = this.mockDataCache.get(mockFile);
+          if (content === null) throw new Error('Invalid JSON cached');
         } else {
           content = await fs.promises.readFile(mockFile, 'utf8');
-          JSON.parse(content); // Validate JSON
-          this.mockDataCache.set(mockFile, content);
+          try {
+            JSON.parse(content); // Validate JSON
+            this.mockDataCache.set(mockFile, content);
+          } catch (e) {
+            this.mockDataCache.set(mockFile, null);
+            throw e;
+          }
         }
         // Optionally read meta file for status/headers (future)
         res.status(200).type('json').send(content);
@@ -207,10 +213,16 @@ class MoqServer {
         let content;
         if (this.mockDataCache.has(fallback)) {
           content = this.mockDataCache.get(fallback);
+          if (content === null) throw new Error('Invalid JSON cached');
         } else {
           content = await fs.promises.readFile(fallback, 'utf8');
-          JSON.parse(content); // Validate JSON
-          this.mockDataCache.set(fallback, content);
+          try {
+            JSON.parse(content); // Validate JSON
+            this.mockDataCache.set(fallback, content);
+          } catch (e) {
+            this.mockDataCache.set(fallback, null);
+            throw e;
+          }
         }
         res.status(404).type('json').send(content);
       } catch {
@@ -222,7 +234,9 @@ class MoqServer {
   }
 
   proxyRequest(req, res) {
-    const parsed = new URL(req.originalUrl || req.url, this.proxyTarget);
+    const reqPath = req.originalUrl || req.url;
+    const targetUrl = this.proxyTarget.replace(/\/$/, '') + (reqPath.startsWith('/') ? reqPath : `/${reqPath}`);
+    const parsed = new URL(targetUrl);
     const isHttps = parsed.protocol === 'https:';
     const transport = isHttps ? https : http;
     const options = {
