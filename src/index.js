@@ -60,6 +60,14 @@ class MoqServer {
     this.app.use((req, res, next) => {
       this.notFoundHandler(req, res).catch(next);
     });
+
+    // Global error handler
+    this.app.use((err, req, res, next) => {
+      console.error(`Express error: ${err.message}`);
+      if (!res.headersSent) {
+        res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
+      }
+    });
   }
 
   async handleRequest(req, res, next) {
@@ -236,7 +244,16 @@ class MoqServer {
   proxyRequest(req, res) {
     const reqPath = req.originalUrl || req.url;
     const targetUrl = this.proxyTarget.replace(/\/$/, '') + (reqPath.startsWith('/') ? reqPath : `/${reqPath}`);
-    const parsed = new URL(targetUrl);
+    let parsed;
+    try {
+      parsed = new URL(targetUrl);
+    } catch (err) {
+      console.error(`Invalid proxy target URL: ${targetUrl}`);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Invalid proxy target URL' });
+      }
+      return;
+    }
     const isHttps = parsed.protocol === 'https:';
     const transport = isHttps ? https : http;
     const options = {
