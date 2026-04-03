@@ -89,8 +89,10 @@ class MoqServer {
           content = await fs.promises.readFile(mockFile, 'utf8');
           try {
             JSON.parse(content); // Validate JSON
+            if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
             this.mockDataCache.set(mockFile, content);
           } catch (e) {
+            if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
             this.mockDataCache.set(mockFile, null);
             throw e;
           }
@@ -226,8 +228,10 @@ class MoqServer {
           content = await fs.promises.readFile(fallback, 'utf8');
           try {
             JSON.parse(content); // Validate JSON
+            if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
             this.mockDataCache.set(fallback, content);
           } catch (e) {
+            if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
             this.mockDataCache.set(fallback, null);
             throw e;
           }
@@ -270,6 +274,10 @@ class MoqServer {
       for (const [key, value] of Object.entries(proxyRes.headers)) {
         res.setHeader(key, value);
       }
+      proxyRes.on('error', err => {
+        console.error('Proxy response error:', err.message);
+        res.destroy(err);
+      });
       proxyRes.pipe(res);
     });
 
