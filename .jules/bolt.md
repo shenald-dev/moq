@@ -9,3 +9,7 @@ Unbounded caches (`mockDataCache`) in long-running processes pose an OOM risk if
 
 Action:
 Ensure bounded constraints are implemented on all memory data structures (added a 10,000 entry eviction ceiling for `mockDataCache`). In proxy stream patterns, always explicitly listen for the 'error' event on both sides of a pipe to destroy downstream and prevent the `node:events` default handler from crashing the main application thread.
+
+2024-04-04 — Chokidar Startup Performance Fix
+Learning: The mock server suffered from an O(N) startup cost when hot-reloading was enabled. Chokidar fires `add` events for every existing file during initialization, leading to redundant, cascading clear operations on all caches.
+Action: Implemented `ignoreInitial: true` in Chokidar configuration and added a debounce wrapper (`scheduleReload`) around `reloadMocks()` to gracefully handle batch modifications without blocking or spamming the console. This should be applied to any future directory-watching implementations to prevent OOM or extreme start times.
