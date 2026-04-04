@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.4
+
+* **Lifecycle / Maintenance:**
+  * Pruned dead code: removed unused `findMockFile` wrapper function and unused `fs` imports.
+  * Added integration test to assure proper 500 error handling when a mocked JSON file is invalid.
+  * Applied safe minor/patch dependency upgrades via `npm update`.
+
 ## v0.2.3
 
 * **Lifecycle / Maintenance:**
