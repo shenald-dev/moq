@@ -9,3 +9,11 @@ Unbounded caches (`mockDataCache`) in long-running processes pose an OOM risk if
 
 Action:
 Ensure bounded constraints are implemented on all memory data structures (added a 10,000 entry eviction ceiling for `mockDataCache`). In proxy stream patterns, always explicitly listen for the 'error' event on both sides of a pipe to destroy downstream and prevent the `node:events` default handler from crashing the main application thread.
+
+## 2024-05-02 — Chokidar O(N) Startup & Batch Debounce
+
+Learning:
+Chokidar's default behavior emits an `add` event for every single file it discovers during initialization. For repositories or folders with many files, this triggers an O(N) cascade of synchronous callback executions (e.g., calling `reloadMocks()` thousands of times consecutively). Furthermore, batch file operations (like `git checkout` or `cp -r`) trigger rapid bursts of `add`/`change`/`unlink` events, severely degrading performance and spamming logs.
+
+Action:
+Always configure Chokidar with `ignoreInitial: true` when watching pre-existing directories unless the initial discovery phase is strictly required by the application logic. Furthermore, when watching files for high-level operations like "reload cache" or "recompile", always debounce the file watcher events to collapse rapid bursts into a single execution frame.

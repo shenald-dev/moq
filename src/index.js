@@ -305,18 +305,27 @@ class MoqServer {
 
   setupHotReload() {
     if (!fs.existsSync(this.mocksDir)) return;
-    this.watcher = chokidar.watch(this.mocksDir, { ignored: /(^|[\/\\])\../, persistent: true });
+    this.watcher = chokidar.watch(this.mocksDir, { ignored: /(^|[\/\\])\../, persistent: true, ignoreInitial: true });
+
+    let debounceTimer;
+    const debouncedReload = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        this.reloadMocks();
+      }, 50);
+    };
+
     this.watcher.on('add', path => {
       console.log(`📝 Mock added: ${path}`);
-      this.reloadMocks();
+      debouncedReload();
     });
     this.watcher.on('change', path => {
       console.log(`📝 Mock changed: ${path}`);
-      this.reloadMocks();
+      debouncedReload();
     });
     this.watcher.on('unlink', path => {
       console.log(`🗑️ Mock removed: ${path}`);
-      this.reloadMocks();
+      debouncedReload();
     });
   }
 
