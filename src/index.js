@@ -272,7 +272,11 @@ class MoqServer {
     const proxyReq = transport.request(options, proxyRes => {
       res.status(proxyRes.statusCode);
       for (const [key, value] of Object.entries(proxyRes.headers)) {
-        res.setHeader(key, value);
+        try {
+          res.setHeader(key, value);
+        } catch (err) {
+          console.error(`Failed to set header "${key}":`, err.message);
+        }
       }
       proxyRes.on('error', err => {
         console.error('Proxy response error:', err.message);
