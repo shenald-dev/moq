@@ -135,6 +135,56 @@ async function runTests() {
     failed++;
   }
 
+  // Test 6: Proxy mode with invalid upstream headers
+  try {
+    // Setup a dummy upstream server that sends an invalid header
+    const dummyUpstreamPort = 3334;
+    const dummyUpstream = http.createServer((req, res) => {
+      // We simulate an upstream response that has an invalid header.
+      // Instead of writing raw socket data (which might cause a Node.js Parse Error on the client),
+      // we'll patch `proxyRes.headers` on the client side in the test, OR we can test the try-catch by directly sending an array
+      // that express `res.setHeader` fails on.
+      res.setHeader('X-Custom', 'valid');
+      res.end(JSON.stringify({ proxied: true }));
+    });
+
+    await new Promise(r => dummyUpstream.listen(dummyUpstreamPort, r));
+
+    const proxyPort = 3335;
+    const proxyServer = new MoqServer({ port: proxyPort, mocksDir, noReload: true, proxy: true, proxyTarget: `http://localhost:${dummyUpstreamPort}` });
+
+    // Intercept transport.request in proxy mode to inject an invalid header
+    // that won't trigger `Parse Error` from Node's HTTP parser but WILL trigger `ERR_INVALID_CHAR` in `res.setHeader`
+    const originalRequest = http.request;
+    http.request = function(options, cb) {
+      return originalRequest.call(this, options, (proxyRes) => {
+        // Inject an invalid header that bypasses http parser but fails setHeader
+        proxyRes.headers['x-invalid-header'] = 'invalid\x01value';
+        cb(proxyRes);
+      });
+    };
+
+    const httpProxyServer = proxyServer.app.listen(proxyPort, () => console.log(`🚀 Test proxy server on :${proxyPort}`));
+
+    await new Promise(r => setTimeout(r, 500));
+
+    const r = await request('GET', '/proxy-test', proxyPort);
+    if (r.status === 200 && r.body && r.body.proxied) {
+      console.log('✅ Proxy handles invalid upstream headers');
+      passed++;
+    } else {
+      console.log('❌ Proxy invalid headers failed', r);
+      failed++;
+    }
+
+    httpProxyServer.close();
+    dummyUpstream.close();
+    http.request = originalRequest; // restore
+  } catch (e) {
+    console.log('❌ Proxy invalid headers error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 
