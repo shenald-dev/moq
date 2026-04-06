@@ -12,3 +12,11 @@ Ensure bounded constraints are implemented on all memory data structures (added 
 2024-04-03 — Chokidar Startup Optimization
 Learning: By default, `chokidar.watch` emits `add` events for every existing file when it initializes. In a mock server with many files, this caused O(N) cache clears and console logs during startup.
 Action: Future watchers handling hot-reload patterns should use `ignoreInitial: true` and implement a debounce for batch file updates to avoid rapid repetitive cache invalidation.
+
+## 2024-05-15 — Proxy Header Exception Safety
+
+Learning:
+When proxying upstream response headers in Node.js/Express using `res.setHeader(key, value)`, injecting invalid characters into the header value can cause the Node.js HTTP client to throw a synchronous exception (`ERR_INVALID_CHAR`). Because this runs inside an asynchronous callback, it bypasses global Express error handlers and crashes the entire Node process.
+
+Action:
+Always wrap dynamic header setting (`res.setHeader`) in a `try-catch` block, especially when proxying data from untrusted or unpredictable upstream targets, to maintain server stability.
