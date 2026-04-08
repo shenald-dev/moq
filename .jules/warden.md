@@ -1,3 +1,16 @@
+2026-04-08 — Assessment & Lifecycle
+
+Observation / Pruned:
+Observed new hot-reload debounce caching logic (`ignoreInitial: true` and `scheduleReload()`). The optimization simplifies hot-reloading file processing. Pruned redundant `findMockFile` wrapper function from `src/index.js`, routing directly to `resolveMockPath` instead.
+
+Alignment / Deferred:
+Safe dependency updates applied (e.g. minor updates). Deferred major framework bumps.
+
+Lines of Code Deleted (Running Tally):
+- 22 lines (2024-03-28)
+- 4 lines (2026-04-08)
+Total: -26 lines
+
 2026-03-31 — Assessment & Lifecycle
 
 Observation / Pruned:
