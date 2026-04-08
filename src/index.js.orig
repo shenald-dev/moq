@@ -271,7 +271,11 @@ class MoqServer {
         try {
           res.setHeader(key, value);
         } catch (err) {
+<<<<<<< Updated upstream
           console.error(`Warning: Failed to set header ${key}: ${err.message}`);
+=======
+          console.error(`Failed to set header ${key}: ${err.message}`);
+>>>>>>> Stashed changes
         }
       }
       proxyRes.on('error', err => {
