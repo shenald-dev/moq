@@ -72,7 +72,7 @@ class MoqServer {
 
   async handleRequest(req, res, next) {
     // Try to find mock file
-    const mockFile = this.findMockFile(req.method, req.path);
+    const mockFile = this.resolveMockPath(req.method, req.path);
 
     // If proxy mode and target set, and no matching mock, proxy
     if (this.proxyMode && this.proxyTarget && !mockFile) {
@@ -109,10 +109,6 @@ class MoqServer {
 
     // No mock found
     next();
-  }
-
-  findMockFile(method, path) {
-    return this.resolveMockPath(method, path);
   }
 
   resolveMockPath(method, route) {
@@ -275,7 +271,11 @@ class MoqServer {
         try {
           res.setHeader(key, value);
         } catch (err) {
+<<<<<<< HEAD
+          console.error(`Warning: Failed to set header ${key}: ${err.message}`);
+=======
           console.error(`Error setting proxy header ${key}:`, err.message);
+>>>>>>> d7be207 (fix(proxy): catch synchronous res.setHeader exceptions to prevent process crash)
         }
       }
       proxyRes.on('error', err => {

@@ -13,6 +13,12 @@ Ensure bounded constraints are implemented on all memory data structures (added 
 Learning: By default, `chokidar.watch` emits `add` events for every existing file when it initializes. In a mock server with many files, this caused O(N) cache clears and console logs during startup.
 Action: Future watchers handling hot-reload patterns should use `ignoreInitial: true` and implement a debounce for batch file updates to avoid rapid repetitive cache invalidation.
 
+<<<<<<< HEAD
+2024-05-23 — Prevent crash on proxy response headers
+Learning: Setting dynamic HTTP headers via `res.setHeader()` in Express/Node.js can throw synchronous exceptions (e.g. `ERR_INVALID_CHAR`) if the values are malformed. If this happens inside an asynchronous callback (like `http.request`), it bypasses the Express global error handler and crashes the entire Node process.
+Action: Always wrap `res.setHeader()` calls with a `try-catch` block when dealing with upstream proxy targets.
+=======
 ## 2024-05-02 — Proxy Header Synchronous Exceptions
 Learning: When proxying HTTP requests in Express, dynamically setting response headers with `res.setHeader(key, value)` can throw synchronous exceptions (e.g., `ERR_INVALID_CHAR` when a header value contains invalid characters). Since this occurs within an asynchronous callback (e.g., `http.request`), it bypasses the global error handler and crashes the entire Node.js process.
 Action: Always wrap `res.setHeader` inside a `try/catch` block when iterating over proxy upstream headers. This safely logs the invalid header and prevents process termination.
+>>>>>>> d7be207 (fix(proxy): catch synchronous res.setHeader exceptions to prevent process crash)

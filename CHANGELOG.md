@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.4
+
+* **Enhancements:**
+  * Optimized hot-reloads to run batched memory reads via chokidar using `ignoreInitial: true` and debounced reloading via `scheduleReload()`.
+* **Lifecycle / Maintenance:**
+  * Pruned redundant `findMockFile` wrapper function from `src/index.js`, simplifying class complexity.
+
 ## v0.2.3
 
 * **Lifecycle / Maintenance:**
