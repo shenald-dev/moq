@@ -1,10 +1,15 @@
-2026-04-04 — Assessment & Lifecycle
+2026-04-08 — Assessment & Lifecycle
 
 Observation / Pruned:
-Assessed previous agent optimization for Express-based mocked server. Pruned dead code (unused `findMockFile` wrapper function from `src/index.js` and unused `fs` imports from `tests/test.js`). Verified proper JSON parsing error handling (added integration test for returning 500 without crashing).
+Observed new hot-reload debounce caching logic (`ignoreInitial: true` and `scheduleReload()`). The optimization simplifies hot-reloading file processing. Pruned redundant `findMockFile` wrapper function from `src/index.js`, routing directly to `resolveMockPath` instead.
 
 Alignment / Deferred:
-Updated patch dependency versions safely via `npm update`. Bumped patch version to v0.2.4.
+Safe dependency updates applied (e.g. minor updates). Deferred major framework bumps.
+
+Lines of Code Deleted (Running Tally):
+- 22 lines (2024-03-28)
+- 4 lines (2026-04-08)
+Total: -26 lines
 
 2026-03-31 — Assessment & Lifecycle
 

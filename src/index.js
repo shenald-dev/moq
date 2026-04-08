@@ -102,9 +102,7 @@ class MoqServer {
         console.log(`✅ Served mock: ${req.method} ${req.path} → ${path.basename(mockFile)}`);
       } catch (err) {
         console.error(`Mock error: ${err.message}`);
-        if (!res.headersSent) {
-          res.status(500).json({ error: 'Mock file error' });
-        }
+        res.status(500).json({ error: 'Mock file error' });
       }
       return;
     }
@@ -270,7 +268,11 @@ class MoqServer {
     const proxyReq = transport.request(options, proxyRes => {
       res.status(proxyRes.statusCode);
       for (const [key, value] of Object.entries(proxyRes.headers)) {
-        res.setHeader(key, value);
+        try {
+          res.setHeader(key, value);
+        } catch (err) {
+          console.error(`Warning: Failed to set header ${key}: ${err.message}`);
+        }
       }
       proxyRes.on('error', err => {
         console.error('Proxy response error:', err.message);
@@ -303,19 +305,28 @@ class MoqServer {
 
   setupHotReload() {
     if (!fs.existsSync(this.mocksDir)) return;
-    this.watcher = chokidar.watch(this.mocksDir, { ignored: /(^|[\/\\])\../, persistent: true });
+    this.watcher = chokidar.watch(this.mocksDir, { ignored: /(^|[\/\\])\../, persistent: true, ignoreInitial: true });
     this.watcher.on('add', path => {
       console.log(`📝 Mock added: ${path}`);
-      this.reloadMocks();
+      this.scheduleReload();
     });
     this.watcher.on('change', path => {
       console.log(`📝 Mock changed: ${path}`);
-      this.reloadMocks();
+      this.scheduleReload();
     });
     this.watcher.on('unlink', path => {
       console.log(`🗑️ Mock removed: ${path}`);
-      this.reloadMocks();
+      this.scheduleReload();
     });
+  }
+
+  scheduleReload() {
+    if (this.reloadTimeout) {
+      clearTimeout(this.reloadTimeout);
+    }
+    this.reloadTimeout = setTimeout(() => {
+      this.reloadMocks();
+    }, 100); // Debounce batch updates
   }
 
   reloadMocks() {

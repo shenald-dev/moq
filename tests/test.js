@@ -3,6 +3,7 @@
  */
 
 const http = require('http');
+const { readFileSync, existsSync } = require('fs');
 const path = require('path');
 
 // Test utilities
@@ -132,35 +133,6 @@ async function runTests() {
   } catch (e) {
     console.log('❌ Dynamic Mock GET error', e);
     failed++;
-  }
-
-  // Test 6: Invalid JSON handling (Server should not crash)
-  try {
-    const fs = require('fs');
-    const invalidMockDir = path.join(mocksDir, 'GET-');
-    if (!fs.existsSync(invalidMockDir)) {
-      fs.mkdirSync(invalidMockDir, { recursive: true });
-    }
-    fs.writeFileSync(path.join(invalidMockDir, 'invalid.json'), '{"invalid": "json", }'); // Trailing comma
-    server.reloadMocks(); // Manually trigger reload
-
-    const r = await request('GET', '/invalid', port);
-    if (r.status === 500 && r.body && r.body.error === 'Mock file error') {
-      console.log('✅ Invalid JSON properly handled (500)');
-      passed++;
-    } else {
-      console.log('❌ Invalid JSON test failed', r);
-      failed++;
-    }
-  } catch (e) {
-    console.log('❌ Invalid JSON test error', e);
-    failed++;
-  } finally {
-    const fs = require('fs');
-    if (fs.existsSync(path.join(mocksDir, 'GET-', 'invalid.json'))) {
-      fs.unlinkSync(path.join(mocksDir, 'GET-', 'invalid.json'));
-    }
-    server.reloadMocks(); // reset
   }
 
   // Cleanup

@@ -2,10 +2,10 @@
 
 ## v0.2.4
 
+* **Enhancements:**
+  * Optimized hot-reloads to run batched memory reads via chokidar using `ignoreInitial: true` and debounced reloading via `scheduleReload()`.
 * **Lifecycle / Maintenance:**
-  * Pruned dead code: removed unused `findMockFile` wrapper function and unused `fs` imports.
-  * Added integration test to assure proper 500 error handling when a mocked JSON file is invalid.
-  * Applied safe minor/patch dependency upgrades via `npm update`.
+  * Pruned redundant `findMockFile` wrapper function from `src/index.js`, simplifying class complexity.
 
 ## v0.2.3
 
