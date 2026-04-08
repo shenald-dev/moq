@@ -81,22 +81,37 @@ class MoqServer {
 
     if (mockFile) {
       try {
-        let content;
+        let contentPromise;
         if (this.mockDataCache.has(mockFile)) {
-          content = this.mockDataCache.get(mockFile);
-          if (content === null) throw new Error('Invalid JSON cached');
+          contentPromise = this.mockDataCache.get(mockFile);
         } else {
-          content = await fs.promises.readFile(mockFile, 'utf8');
-          try {
-            JSON.parse(content); // Validate JSON
-            if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
-            this.mockDataCache.set(mockFile, content);
-          } catch (e) {
-            if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
-            this.mockDataCache.set(mockFile, null);
-            throw e;
-          }
+          contentPromise = fs.promises.readFile(mockFile, 'utf8').then(content => {
+            try {
+              JSON.parse(content); // Validate JSON
+              return content;
+            } catch (e) {
+              if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
+              this.mockDataCache.set(mockFile, Promise.reject(new Error('Invalid JSON cached')).catch(() => {}));
+              throw e;
+            }
+          });
+          if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
+          this.mockDataCache.set(mockFile, contentPromise);
         }
+
+        let content;
+        try {
+          content = await contentPromise;
+        } catch (e) {
+          // If file reading failed (e.g. ENOENT after cache populate but before read resolves),
+          // we should not permanently cache the failure as "Invalid JSON".
+          // The original code only cached `null` if JSON parsing failed.
+          if (e.message !== 'Invalid JSON cached') {
+             this.mockDataCache.delete(mockFile);
+          }
+          throw e;
+        }
+
         // Optionally read meta file for status/headers (future)
         res.status(200).type('json').send(content);
         console.log(`✅ Served mock: ${req.method} ${req.path} → ${path.basename(mockFile)}`);
@@ -216,22 +231,34 @@ class MoqServer {
     if (this.mockFilesSet.has('404.json')) {
       const fallback = path.join(this.mocksDir, '404.json');
       try {
-        let content;
+        let contentPromise;
         if (this.mockDataCache.has(fallback)) {
-          content = this.mockDataCache.get(fallback);
-          if (content === null) throw new Error('Invalid JSON cached');
+          contentPromise = this.mockDataCache.get(fallback);
         } else {
-          content = await fs.promises.readFile(fallback, 'utf8');
-          try {
-            JSON.parse(content); // Validate JSON
-            if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
-            this.mockDataCache.set(fallback, content);
-          } catch (e) {
-            if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
-            this.mockDataCache.set(fallback, null);
-            throw e;
-          }
+          contentPromise = fs.promises.readFile(fallback, 'utf8').then(content => {
+            try {
+              JSON.parse(content); // Validate JSON
+              return content;
+            } catch (e) {
+              if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
+              this.mockDataCache.set(fallback, Promise.reject(new Error('Invalid JSON cached')).catch(() => {}));
+              throw e;
+            }
+          });
+          if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
+          this.mockDataCache.set(fallback, contentPromise);
         }
+
+        let content;
+        try {
+          content = await contentPromise;
+        } catch (e) {
+          if (e.message !== 'Invalid JSON cached') {
+             this.mockDataCache.delete(fallback);
+          }
+          throw e;
+        }
+
         res.status(404).type('json').send(content);
       } catch {
         res.status(404).json({ error: 'Not found' });

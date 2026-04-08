@@ -16,3 +16,7 @@ Action: Future watchers handling hot-reload patterns should use `ignoreInitial: 
 2024-05-23 — Prevent crash on proxy response headers
 Learning: Setting dynamic HTTP headers via `res.setHeader()` in Express/Node.js can throw synchronous exceptions (e.g. `ERR_INVALID_CHAR`) if the values are malformed. If this happens inside an asynchronous callback (like `http.request`), it bypasses the Express global error handler and crashes the entire Node process.
 Action: Always wrap `res.setHeader()` calls with a `try-catch` block when dealing with upstream proxy targets.
+
+YYYY-MM-DD — Cache Stampede Prevention
+Learning: Caching the result of an asynchronous operation *after* it completes leaves the system vulnerable to a "cache stampede" (thundering herd) under high concurrency, where multiple requests trigger the exact same expensive I/O and parsing operation simultaneously.
+Action: Store a `Promise` of the operation in the cache *before* it resolves. Ensure rejected promises attach a `.catch(() => {})` handler before being stored to avoid unhandled rejection crashes in modern Node.js environments.
