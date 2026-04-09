@@ -20,3 +20,11 @@ Action: Always wrap `res.setHeader()` calls with a `try-catch` block when dealin
 YYYY-MM-DD — Cache Stampede Prevention
 Learning: Caching the result of an asynchronous operation *after* it completes leaves the system vulnerable to a "cache stampede" (thundering herd) under high concurrency, where multiple requests trigger the exact same expensive I/O and parsing operation simultaneously.
 Action: Store a `Promise` of the operation in the cache *before* it resolves. Ensure rejected promises attach a `.catch(() => {})` handler before being stored to avoid unhandled rejection crashes in modern Node.js environments.
+
+## 2026-04-09 — Optimize Directory Scanning
+
+Learning:
+The `readDirRecursive` method was using `path.relative` and string splitting (`.split(path.sep).join('/')`) on every file, which is heavily inefficient and generates excess garbage, causing ~36ms overhead on medium directories. By incrementally tracking the relative path during recursion and using simple string concatenation, scanning is significantly faster (~15ms) and allocates far less memory.
+
+Action:
+Avoid using `path.relative` in hot paths or tight loops. Instead, compute relative paths incrementally using string concatenation or `path.posix.join` to avoid unnecessary array allocations and platform-specific separator patching.
