@@ -24,7 +24,6 @@ class MoqServer {
     this.httpAgent = new http.Agent({ keepAlive: true });
     this.httpsAgent = new https.Agent({ keepAlive: true });
     this.app = express();
-    this.mockFilesCache = null;
     this.mockFilesSet = null;
     this.dynamicRoutes = null;
     this.routeCache = new Map();
@@ -146,7 +145,7 @@ class MoqServer {
       this.routeCache.clear();
     }
 
-    this.getMockFiles(); // ensure caches are populated
+    if (!this.mockFilesSet) this.getMockFiles(); // ensure caches are populated
     const exactMatchPath = `${method}-${route}.json`;
 
     // Fast path: exact match in set
@@ -182,18 +181,17 @@ class MoqServer {
   }
 
   getMockFiles() {
-    if (this.mockFilesCache) return this.mockFilesCache;
+    if (this.mockFilesSet) return Array.from(this.mockFilesSet);
     if (!fs.existsSync(this.mocksDir)) {
-      this.mockFilesCache = [];
       this.mockFilesSet = new Set();
       this.dynamicRoutes = [];
-      return this.mockFilesCache;
+      return [];
     }
-    this.mockFilesCache = this.readDirRecursive(this.mocksDir, '');
-    this.mockFilesSet = new Set(this.mockFilesCache);
+    const filesArray = this.readDirRecursive(this.mocksDir, '');
+    this.mockFilesSet = new Set(filesArray);
 
     this.dynamicRoutes = [];
-    for (const file of this.mockFilesCache) {
+    for (const file of filesArray) {
       const methodEnd = file.indexOf('-');
       if (methodEnd === -1 || !file.endsWith('.json')) continue;
 
@@ -209,7 +207,7 @@ class MoqServer {
       }
     }
 
-    return this.mockFilesCache;
+    return Array.from(this.mockFilesSet);
   }
 
   readDirRecursive(dir, currentRelPath = '', results = []) {
@@ -227,7 +225,7 @@ class MoqServer {
   }
 
   async notFoundHandler(req, res) {
-    this.getMockFiles(); // ensure caches are populated
+    if (!this.mockFilesSet) this.getMockFiles(); // ensure caches are populated
     if (this.mockFilesSet.has('404.json')) {
       const fallback = path.join(this.mocksDir, '404.json');
       try {
@@ -357,7 +355,6 @@ class MoqServer {
   }
 
   reloadMocks() {
-    this.mockFilesCache = null;
     this.mockDataCache.clear();
     this.mockFilesSet = null;
     this.dynamicRoutes = null;

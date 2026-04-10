@@ -28,3 +28,6 @@ The `readDirRecursive` method was using `path.relative` and string splitting (`.
 
 Action:
 Avoid using `path.relative` in hot paths or tight loops. Instead, compute relative paths incrementally using string concatenation or `path.posix.join` to avoid unnecessary array allocations and platform-specific separator patching.
+2024-05-28 — Eliminate Redundant State
+Learning: Keeping an array and a set of the same string elements (`mockFilesCache` and `mockFilesSet`) offers no real performance benefit because V8 strings are interned, but it adds unnecessary cognitive overhead and state redundancy to the module. However, generating an array from a set via `Array.from()` turns an O(1) property lookup into an O(N) allocation, which is bad for hot paths.
+Action: Eliminate redundant state arrays. To avoid O(N) allocations on hot paths, conditionally check the cache state (e.g. `if (!this.mockFilesSet)`) rather than unconditionally calling the populator method if its return value requires allocation.
