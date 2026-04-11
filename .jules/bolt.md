@@ -28,3 +28,10 @@ The `readDirRecursive` method was using `path.relative` and string splitting (`.
 
 Action:
 Avoid using `path.relative` in hot paths or tight loops. Instead, compute relative paths incrementally using string concatenation or `path.posix.join` to avoid unnecessary array allocations and platform-specific separator patching.
+## 2025-04-11 — Strict URL decoding for path traversal prevention
+
+Learning:
+Relying on simple substring checks like `includes('..')` or specific URL-encoded variations like `includes('%2e%2e')` is insufficient for directory traversal protection. Attackers can bypass this using mixed encoding (e.g., `%2E.`, `%2E%2E`, or `.%2e`).
+
+Action:
+Always fully decode the URI component using `decodeURIComponent` (wrapped in a `try/catch` to safely handle malformed `URIError` exceptions) before validating against directory traversal sequences like `..`.
