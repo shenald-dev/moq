@@ -91,8 +91,10 @@ class MoqServer {
               return content;
             } catch (e) {
               if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
-              this.mockDataCache.set(mockFile, Promise.reject(new Error('Invalid JSON cached')).catch(() => {}));
-              throw e;
+              const errPromise = Promise.reject(new Error('Invalid JSON cached'));
+              errPromise.catch(() => {});
+              this.mockDataCache.set(mockFile, errPromise);
+              throw new Error('Invalid JSON cached');
             }
           });
           if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
@@ -241,8 +243,10 @@ class MoqServer {
               return content;
             } catch (e) {
               if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
-              this.mockDataCache.set(fallback, Promise.reject(new Error('Invalid JSON cached')).catch(() => {}));
-              throw e;
+              const errPromise = Promise.reject(new Error('Invalid JSON cached'));
+              errPromise.catch(() => {});
+              this.mockDataCache.set(fallback, errPromise);
+              throw new Error('Invalid JSON cached');
             }
           });
           if (this.mockDataCache.size > 10000) this.mockDataCache.clear();

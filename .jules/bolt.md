@@ -28,3 +28,7 @@ The `readDirRecursive` method was using `path.relative` and string splitting (`.
 
 Action:
 Avoid using `path.relative` in hot paths or tight loops. Instead, compute relative paths incrementally using string concatenation or `path.posix.join` to avoid unnecessary array allocations and platform-specific separator patching.
+
+2026-04-12 — Fix cache stampede bug for invalid JSON files
+Learning: Chaining `.catch(() => {})` on a rejected Promise returns a new Promise that resolves to `undefined`. If this chained promise is stored in a cache, subsequent cache reads will erroneously resolve to `undefined` rather than properly propagating the error, breaking failure caching logic and causing the application to misbehave.
+Action: To safely prevent `unhandledRejection` warnings when caching a rejected promise, attach the `.catch(() => {})` handler but ensure that the *original* rejected promise instance is the one stored in the cache.
