@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.5
+
+* **Lifecycle / Maintenance:**
+  * Assured structural soundness of the `readDirRecursive` memory optimization.
+  * Evaluated dependency upgrades; deferred major framework bumps to ensure stability.
+
 ## v0.2.4
 
 * **Enhancements:**
