@@ -135,6 +135,37 @@ async function runTests() {
     failed++;
   }
 
+  // Test 6: Security - Directory traversal prevention (mixed-case encoded)
+  try {
+    const r = await request('GET', '/%2E%2E/package.json', port);
+    if (r.status === 404 && r.body && r.body.error === 'Not found') {
+      console.log('✅ Security: Directory traversal blocked');
+      passed++;
+    } else {
+      console.log('❌ Security: Directory traversal failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Security: Directory traversal error', e);
+    failed++;
+  }
+
+  // Test 7: Security - Malformed URI does not crash server
+  try {
+    const r = await request('GET', '/%', port);
+    // Express catches Malformed URI decode errors globally before our routes and returns a 400
+    if (r.status === 400 && r.body && r.body.error && r.body.error.includes('decode param')) {
+      console.log('✅ Security: Malformed URI handled safely');
+      passed++;
+    } else {
+      console.log('❌ Security: Malformed URI failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Security: Malformed URI error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 

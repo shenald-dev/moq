@@ -128,8 +128,16 @@ class MoqServer {
 
   resolveMockPath(method, route) {
     // Directory traversal prevention
-    if (route.includes('..') || route.includes('%2e%2e')) {
-      return null;
+    try {
+      const decodedRoute = decodeURIComponent(route);
+      if (decodedRoute.includes('..')) {
+        return null;
+      }
+    } catch (err) {
+      if (err instanceof URIError) {
+        return null;
+      }
+      throw err;
     }
 
     // Normalize route to file pattern

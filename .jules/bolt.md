@@ -28,3 +28,11 @@ The `readDirRecursive` method was using `path.relative` and string splitting (`.
 
 Action:
 Avoid using `path.relative` in hot paths or tight loops. Instead, compute relative paths incrementally using string concatenation or `path.posix.join` to avoid unnecessary array allocations and platform-specific separator patching.
+
+## 2024-04-13 — Directory Traversal Bypass Fix
+
+Learning:
+Explicit string checks for directory traversal (`route.includes('%2e%2e')`) are easily bypassed using mixed-case encoding (e.g., `%2E%2E`). Additionally, Express handles URI decoding errors (like `%`) globally *before* the request reaches the router middleware, returning a 400 Bad Request.
+
+Action:
+Always decode URIs using `decodeURIComponent` wrapped in a `try...catch` block before validating against sequence patterns like `..` to ensure all variations of URL encodings are caught, and handle `URIError` exceptions gracefully to prevent application crashes from malformed inputs. Tests validating malformed URIs should anticipate a 400 response directly from Express instead of application-level logic handling.
