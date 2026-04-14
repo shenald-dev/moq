@@ -28,3 +28,11 @@ The `readDirRecursive` method was using `path.relative` and string splitting (`.
 
 Action:
 Avoid using `path.relative` in hot paths or tight loops. Instead, compute relative paths incrementally using string concatenation or `path.posix.join` to avoid unnecessary array allocations and platform-specific separator patching.
+
+## 2024-04-14 — Promise.reject caching pattern
+
+Learning:
+Chaining `.catch(() => {})` directly onto `Promise.reject(new Error(...))` returns a resolved promise with the value `undefined`. This broke the application's invalid JSON caching, as the cache stored a successful resolution rather than propagating the rejection to subsequent reads.
+
+Action:
+When caching rejected promises in Node.js to prevent "cache stampede", attach the `.catch()` handler to silence `unhandledRejection` warnings but store the original rejected promise instance in the cache. Additionally, ensure the thrown error correctly matches the expected cache invalidation logic (e.g. throwing `Invalid JSON cached`).
