@@ -28,3 +28,11 @@ The `readDirRecursive` method was using `path.relative` and string splitting (`.
 
 Action:
 Avoid using `path.relative` in hot paths or tight loops. Instead, compute relative paths incrementally using string concatenation or `path.posix.join` to avoid unnecessary array allocations and platform-specific separator patching.
+
+## 2024-11-20 — Directory Traversal Protection with URI Decoding
+
+Learning:
+When protecting against directory traversal in HTTP endpoints, simple substring checks like `.includes('..')` or explicit checks for encoded sequences like `%2e%2e` are insufficient. Attackers can bypass these using mixed-case encodings (e.g., `%2E%2E` or `%2e%2E`). Express catches malformed URI decode errors globally, but it's critical to decode the URI component securely before validating the path internally.
+
+Action:
+Always fully decode the URI path component using `decodeURIComponent` (wrapped in a `try/catch` to handle `URIError` exceptions gracefully) before checking for restricted sequences like `..` to ensure all encoding variations are caught reliably.
