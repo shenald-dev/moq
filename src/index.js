@@ -127,8 +127,25 @@ class MoqServer {
   }
 
   resolveMockPath(method, route) {
+    let decodedRoute = route;
+    try {
+      decodedRoute = decodeURIComponent(route);
+      // If the decoded route still contains '%', it might be double-encoded.
+      // Try to decode it again to catch bypasses, but if it throws (e.g. valid literal '%'),
+      // keep the first pass decoding.
+      if (decodedRoute.includes('%')) {
+        try {
+          decodedRoute = decodeURIComponent(decodedRoute);
+        } catch (e) {
+          // Ignore error, keep single decoded string
+        }
+      }
+    } catch (e) {
+      return null;
+    }
+
     // Directory traversal prevention
-    if (route.includes('..') || route.includes('%2e%2e')) {
+    if (decodedRoute.includes('..')) {
       return null;
     }
 

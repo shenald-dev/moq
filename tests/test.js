@@ -135,6 +135,24 @@ async function runTests() {
     failed++;
   }
 
+  // Test 6: URL decoding and traversal prevention
+  try {
+    const r = await request('GET', '/api/%252E%252E/secret', port);
+    // Since %252E%252E resolves to .. internally and fails validation,
+    // it will return null from resolveMockPath, continuing to the next()
+    // handler which eventually returns a 404 from the fallback error handler.
+    if (r.status === 404 && r.body && r.body.error === 'Not found') {
+      console.log('✅ URL traversal prevention');
+      passed++;
+    } else {
+      console.log('❌ URL traversal prevention failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ URL traversal prevention error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 

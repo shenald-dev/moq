@@ -28,3 +28,11 @@ The `readDirRecursive` method was using `path.relative` and string splitting (`.
 
 Action:
 Avoid using `path.relative` in hot paths or tight loops. Instead, compute relative paths incrementally using string concatenation or `path.posix.join` to avoid unnecessary array allocations and platform-specific separator patching.
+
+## 2026-04-16 — Fix directory traversal bypass with decoded routes
+
+Learning:
+The directory traversal prevention was previously performed on the raw route. A double URL encoded sequence like `%252E%252E` bypasses a simple `route.includes('..') || route.includes('%2e%2e')` check. When the decoded path isn't used as the single source of truth for validation, the application is vulnerable.
+
+Action:
+Always fully decode the URI component using `decodeURIComponent` (wrapped in a `try/catch` to gracefully return `null` on malformed URLs) before performing path sequence validation.
