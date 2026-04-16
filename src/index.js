@@ -127,8 +127,15 @@ class MoqServer {
   }
 
   resolveMockPath(method, route) {
+    let decodedRoute = route;
+    try {
+      decodedRoute = decodeURIComponent(route);
+    } catch (e) {
+      return null;
+    }
+
     // Directory traversal prevention
-    if (route.includes('..') || route.includes('%2e%2e')) {
+    if (decodedRoute.includes('..')) {
       return null;
     }
 

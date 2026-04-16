@@ -135,6 +135,21 @@ async function runTests() {
     failed++;
   }
 
+  // Test 6: Directory traversal prevention (mixed-case encoding)
+  try {
+    const r = await request('GET', '/%2e%2E/%2e%2E/package.json', port);
+    if (r.status === 404 || r.status === 400) {
+      console.log('✅ Directory traversal prevention (mixed-case %2e%2E)');
+      passed++;
+    } else {
+      console.log('❌ Directory traversal prevention failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Directory traversal prevention error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 

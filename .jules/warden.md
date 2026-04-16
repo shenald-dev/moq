@@ -1,3 +1,11 @@
+2026-04-16 — Assessment & Lifecycle
+
+Observation / Pruned:
+Observed a directory traversal vulnerability in `resolveMockPath` where the filter missed mixed-case URL encodings like `%2e%2E`. Applied a fix to safely decode the URI and test it against `..`.
+
+Alignment / Deferred:
+Updated `tests/test.js` to include mixed-case traversal checks. Deferred architectural redesigns, no other files changed.
+
 2026-04-08 — Assessment & Lifecycle
 
 Observation / Pruned:

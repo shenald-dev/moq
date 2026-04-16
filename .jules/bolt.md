@@ -1,3 +1,11 @@
+## 2026-04-16 — Security: Directory Traversal Filter Bypass
+
+Learning:
+A simple string search for `..` or `%2e%2e` is vulnerable to mixed-case URL encodings like `%2e%2E`. If an attacker uses this encoding, the filter is bypassed, potentially exposing arbitrary files.
+
+Action:
+Always fully decode the URI component using `decodeURIComponent` wrapped in a `try-catch` to handle `URIError` exceptions before checking for directory traversal sequences like `..`.
+
 YYYY-MM-DD — Global Error Handling
 Learning: Express does not automatically handle uncaught synchronous errors cleanly. Malformed URIs caused Express to crash and leak internal HTML stack traces instead of providing standard JSON error responses. Unhandled `new URL()` instantiation errors would completely stop request handling and crash the server.
 Action: Implement standard global Express error handlers as the last middleware step to catch these generic framework errors and serialize them as JSON. Wrap synchronous URL parsing in try/catch blocks within the proxy.
