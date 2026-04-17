@@ -44,3 +44,7 @@ When caching rejected promises, chaining `.catch(() => {})` directly onto `Promi
 
 Action:
 Always create the rejected promise first, attach the `.catch()` handler to it to prevent `unhandledRejection` warnings, but store the original rejected promise instance in the cache so subsequent awaits properly throw the cached error.
+
+2024-05-18 — Preserve Original JSON Errors in Cache Rejections
+Learning: When modifying caching logic to retain promise rejections (e.g., for invalid JSON), it is important not to override the original `SyntaxError` with a generic Error object to bypass deletion checks. Overriding the error degrades Developer Experience (DX) and observability.
+Action: Mutate the original error object (e.g., attach a flag like `e.isInvalidJsonCache = true`) before throwing it. Use this flag for cache retention checks. This preserves the original stack trace and error message while maintaining cache stability.

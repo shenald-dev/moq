@@ -91,9 +91,11 @@ class MoqServer {
               return content;
             } catch (e) {
               if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
-              const rejectedPromise = Promise.reject(new Error('Invalid JSON cached'));
+              // Preserve the original error message for observability
+              const rejectedPromise = Promise.reject(e);
               rejectedPromise.catch(() => {});
               this.mockDataCache.set(mockFile, rejectedPromise);
+              e.isInvalidJsonCache = true;
               throw e;
             }
           });
@@ -108,7 +110,7 @@ class MoqServer {
           // If file reading failed (e.g. ENOENT after cache populate but before read resolves),
           // we should not permanently cache the failure as "Invalid JSON".
           // The original code only cached `null` if JSON parsing failed.
-          if (e.message !== 'Invalid JSON cached') {
+          if (!e.isInvalidJsonCache) {
              this.mockDataCache.delete(mockFile);
           }
           throw e;
@@ -260,9 +262,11 @@ class MoqServer {
               return content;
             } catch (e) {
               if (this.mockDataCache.size > 10000) this.mockDataCache.clear();
-              const rejectedPromise = Promise.reject(new Error('Invalid JSON cached'));
+              // Preserve the original error message for observability
+              const rejectedPromise = Promise.reject(e);
               rejectedPromise.catch(() => {});
               this.mockDataCache.set(fallback, rejectedPromise);
+              e.isInvalidJsonCache = true;
               throw e;
             }
           });
@@ -274,7 +278,7 @@ class MoqServer {
         try {
           content = await contentPromise;
         } catch (e) {
-          if (e.message !== 'Invalid JSON cached') {
+          if (!e.isInvalidJsonCache) {
              this.mockDataCache.delete(fallback);
           }
           throw e;
