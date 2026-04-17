@@ -153,6 +153,35 @@ async function runTests() {
     failed++;
   }
 
+  // Test 7: invalid JSON cached correctly
+  try {
+    const fs = require('fs');
+    const badJsonMock = path.join(mocksDir, 'GET-', 'bad_json_test.json');
+    fs.writeFileSync(badJsonMock, 'invalid json {');
+    server.reloadMocks();
+
+    const r1 = await request('GET', '/bad_json_test', port);
+    const size1 = server.mockDataCache.size;
+    const r2 = await request('GET', '/bad_json_test', port);
+    const size2 = server.mockDataCache.size;
+
+    if (r1.status === 500 && r2.status === 500 && size1 === 1 && size2 === 1) {
+      console.log('✅ Invalid JSON properly cached');
+      passed++;
+    } else {
+      console.log('❌ Invalid JSON properly cached failed', {r1, r2, size1, size2});
+      failed++;
+    }
+
+    if (fs.existsSync(badJsonMock)) {
+      fs.unlinkSync(badJsonMock);
+    }
+    server.reloadMocks(); // reset
+  } catch (e) {
+    console.log('❌ Invalid JSON properly cached error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 
