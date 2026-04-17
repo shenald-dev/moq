@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.5
+
+* **Security:**
+  * Fixed double URL-encoded directory traversal vulnerabilities.
+* **Lifecycle / Maintenance:**
+  * Verified structural soundness and tests. Applied safe patch release.
+
 ## v0.2.4
 
 * **Enhancements:**
