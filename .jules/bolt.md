@@ -36,3 +36,11 @@ The directory traversal prevention was previously performed on the raw route. A 
 
 Action:
 Always fully decode the URI component using `decodeURIComponent` (wrapped in a `try/catch` to gracefully return `null` on malformed URLs) before performing path sequence validation.
+
+## 2024-04-17 — Fix Invalid JSON Cache Rejection Resolving to Undefined
+
+Learning:
+When caching rejected promises, chaining `.catch(() => {})` directly onto `Promise.reject()` returns a new promise that resolves to `undefined`. This incorrectly stores a successful but empty cache entry instead of a cached rejection.
+
+Action:
+Always create the rejected promise first, attach the `.catch()` handler to it to prevent `unhandledRejection` warnings, but store the original rejected promise instance in the cache so subsequent awaits properly throw the cached error.
