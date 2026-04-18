@@ -156,6 +156,7 @@ class MoqServer {
     // Normalize route to file pattern
     // Convert /api/users/123 → /api/users/:id.json if exists, or exact match
     route = route.replace(/\/+$/, ''); // remove trailing slash
+    decodedRoute = decodedRoute.replace(/\/+$/, '');
 
     const cacheKey = `${method}:${route}`;
     if (this.routeCache.has(cacheKey)) {
@@ -168,7 +169,7 @@ class MoqServer {
     }
 
     this.getMockFiles(); // ensure caches are populated
-    const exactMatchPath = `${method}-${route}.json`;
+    const exactMatchPath = `${method}-${decodedRoute}.json`;
 
     // Fast path: exact match in set
     if (this.mockFilesSet.has(exactMatchPath)) {
@@ -178,6 +179,8 @@ class MoqServer {
     }
 
     // Try dynamic: if /api/users/123 doesn't match, try /api/users/:id.json
+    // Use the original route to split so that encoded slashes (%2F) don't alter the part count,
+    // then decode the part before comparing to support decoded matches.
     const parts = route.split('/');
 
     for (const candidate of this.dynamicRoutes) {
@@ -185,7 +188,15 @@ class MoqServer {
         let match = true;
         for (let i = 0; i < candidate.parts.length; i++) {
           if (candidate.parts[i].startsWith(':') && candidate.parts[i].length > 1) continue;
-          if (candidate.parts[i] !== parts[i]) {
+          let decodedPart = parts[i];
+          try {
+            decodedPart = decodeURIComponent(parts[i]);
+            if (decodedPart.includes('%')) {
+              try { decodedPart = decodeURIComponent(decodedPart); } catch (e) {}
+            }
+          } catch (e) {}
+
+          if (candidate.parts[i] !== decodedPart) {
             match = false;
             break;
           }
