@@ -53,3 +53,7 @@ Learning:
 In Express route matching against the filesystem, `req.path` retains URL-encoded characters. Exact file lookups must use the fully decoded path to correctly match filesystem templates containing spaces. For dynamic route matching, the path must be split into segments before decoding to ensure encoded slashes (%2F) do not incorrectly alter the path's segment count.
 Action:
 Implement safe path matching where exact matches utilize `decodeURIComponent` and dynamic matches preserve path boundaries by splitting on un-decoded routes first, before safely decoding and comparing individual components.
+
+2024-05-18 — Hot-path route resolution optimization
+Learning: Performing expensive operations (like URI decoding, string replacement, directory traversal validation, and repetitive segment mapping) on every route lookup leads to continuous CPU exhaustion, particularly on hot paths or against malicious continuous probes.
+Action: Normalize caching upfront before any expensive operations occur. Use the normalized inputs to immediately short-circuit. Additionally, cache invalid/malformed routes (like those generating URIError) as negative results (`null`) to immediately drop successive bad requests without redundant recalculations.

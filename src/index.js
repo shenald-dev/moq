@@ -131,6 +131,19 @@ class MoqServer {
   }
 
   resolveMockPath(method, route) {
+    // Normalize route early for cache key
+    route = route.replace(/\/+$/, ''); // remove trailing slash
+    const cacheKey = `${method}:${route}`;
+
+    if (this.routeCache.has(cacheKey)) {
+      return this.routeCache.get(cacheKey);
+    }
+
+    // Prevent OOM from malicious probing
+    if (this.routeCache.size > 10000) {
+      this.routeCache.clear();
+    }
+
     let decodedRoute = route;
     try {
       decodedRoute = decodeURIComponent(route);
@@ -145,28 +158,17 @@ class MoqServer {
         }
       }
     } catch (e) {
+      this.routeCache.set(cacheKey, null);
       return null;
     }
 
     // Directory traversal prevention
     if (decodedRoute.includes('..')) {
+      this.routeCache.set(cacheKey, null);
       return null;
     }
 
-    // Normalize route to file pattern
-    // Convert /api/users/123 → /api/users/:id.json if exists, or exact match
-    route = route.replace(/\/+$/, ''); // remove trailing slash
     decodedRoute = decodedRoute.replace(/\/+$/, '');
-
-    const cacheKey = `${method}:${route}`;
-    if (this.routeCache.has(cacheKey)) {
-      return this.routeCache.get(cacheKey);
-    }
-
-    // Prevent OOM from malicious probing
-    if (this.routeCache.size > 10000) {
-      this.routeCache.clear();
-    }
 
     this.getMockFiles(); // ensure caches are populated
     const exactMatchPath = `${method}-${decodedRoute}.json`;
@@ -182,21 +184,24 @@ class MoqServer {
     // Use the original route to split so that encoded slashes (%2F) don't alter the part count,
     // then decode the part before comparing to support decoded matches.
     const parts = route.split('/');
+    const decodedParts = parts.map(part => {
+      let decoded = part;
+      try {
+        decoded = decodeURIComponent(part);
+        if (decoded.includes('%')) {
+          try { decoded = decodeURIComponent(decoded); } catch (e) {}
+        }
+      } catch (e) {}
+      return decoded;
+    });
 
     for (const candidate of this.dynamicRoutes) {
       if (candidate.method === method && candidate.parts.length === parts.length) {
         let match = true;
         for (let i = 0; i < candidate.parts.length; i++) {
           if (candidate.parts[i].startsWith(':') && candidate.parts[i].length > 1) continue;
-          let decodedPart = parts[i];
-          try {
-            decodedPart = decodeURIComponent(parts[i]);
-            if (decodedPart.includes('%')) {
-              try { decodedPart = decodeURIComponent(decodedPart); } catch (e) {}
-            }
-          } catch (e) {}
 
-          if (candidate.parts[i] !== decodedPart) {
+          if (candidate.parts[i] !== decodedParts[i]) {
             match = false;
             break;
           }
