@@ -153,6 +153,36 @@ async function runTests() {
     failed++;
   }
 
+  // Test 7: Complex encoded paths with spaces and encoded slashes
+  try {
+    const fs = require('fs');
+    if (!fs.existsSync(path.join(mocksDir, 'GET-'))) fs.mkdirSync(path.join(mocksDir, 'GET-'));
+    if (!fs.existsSync(path.join(mocksDir, 'GET-', 'api'))) fs.mkdirSync(path.join(mocksDir, 'GET-', 'api'));
+    if (!fs.existsSync(path.join(mocksDir, 'GET-', 'api', 'complex match'))) fs.mkdirSync(path.join(mocksDir, 'GET-', 'api', 'complex match'));
+    fs.writeFileSync(path.join(mocksDir, 'GET-', 'api', 'complex match', ':id.json'), JSON.stringify({ complex: true, id: 999 }));
+    server.reloadMocks();
+
+    const r = await request('GET', '/api/complex%20match/John%2FSmith', port);
+    if (r.status === 200 && r.body && r.body.complex === true) {
+      console.log('✅ Complex encoded path match');
+      passed++;
+    } else {
+      console.log('❌ Complex encoded path match failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Complex encoded path match error', e);
+    failed++;
+  } finally {
+    const fs = require('fs');
+    if (fs.existsSync(path.join(mocksDir, 'GET-', 'api', 'complex match', ':id.json'))) {
+      fs.unlinkSync(path.join(mocksDir, 'GET-', 'api', 'complex match', ':id.json'));
+      fs.rmdirSync(path.join(mocksDir, 'GET-', 'api', 'complex match'));
+      // Keep others as they might be needed by other tests
+    }
+    server.reloadMocks();
+  }
+
   // Cleanup
   httpServer.close();
 
