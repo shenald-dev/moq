@@ -53,3 +53,9 @@ Learning:
 In Express route matching against the filesystem, `req.path` retains URL-encoded characters. Exact file lookups must use the fully decoded path to correctly match filesystem templates containing spaces. For dynamic route matching, the path must be split into segments before decoding to ensure encoded slashes (%2F) do not incorrectly alter the path's segment count.
 Action:
 Implement safe path matching where exact matches utilize `decodeURIComponent` and dynamic matches preserve path boundaries by splitting on un-decoded routes first, before safely decoding and comparing individual components.
+
+## 2024-05-18 — Route Cache OOM & Performance Improvement
+Learning:
+Moving the route cache key generation and check earlier in `resolveMockPath` optimizes performance. By generating the key and checking the cache before expensive operations like `decodeURIComponent`, regex manipulation, and directory traversal checks, we can serve repeated valid requests significantly faster. However, we MUST NOT cache invalid requests (like malformed URIs or traversal attempts) as null, because malicious fuzzing tools generate unique paths. Caching them would rapidly fill the cache, trigger the eviction policy, and cause cache thrashing for legitimate users.
+Action:
+Always perform caching checks at the very beginning of a lookup function before executing expensive parsing, decoding, or validation. Never cache unvalidated or maliciously formed input keys, as this creates a cache thrashing vulnerability.
