@@ -153,6 +153,27 @@ async function runTests() {
     failed++;
   }
 
+  // Test 7: Verify invalid routes are not cached
+  try {
+    const cacheKey = 'GET:/api/%252E%252E/secret';
+    // Ensure it's not in the cache initially
+    server.routeCache.delete(cacheKey);
+
+    await request('GET', '/api/%252E%252E/secret', port);
+
+    if (!server.routeCache.has(cacheKey)) {
+      console.log('✅ Invalid routes are not cached');
+      passed++;
+    } else {
+      console.log('❌ Invalid routes are being cached!', server.routeCache.get(cacheKey));
+      server.routeCache.delete(cacheKey); // cleanup
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Invalid route cache check error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 
