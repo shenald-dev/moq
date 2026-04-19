@@ -131,6 +131,20 @@ class MoqServer {
   }
 
   resolveMockPath(method, route) {
+    // Normalize route to file pattern
+    // Convert /api/users/123 → /api/users/:id.json if exists, or exact match
+    route = route.replace(/\/+$/, ''); // remove trailing slash
+
+    const cacheKey = `${method}:${route}`;
+    if (this.routeCache.has(cacheKey)) {
+      return this.routeCache.get(cacheKey);
+    }
+
+    // Prevent OOM from malicious probing
+    if (this.routeCache.size > 10000) {
+      this.routeCache.clear();
+    }
+
     let decodedRoute = route;
     try {
       decodedRoute = decodeURIComponent(route);
@@ -153,20 +167,7 @@ class MoqServer {
       return null;
     }
 
-    // Normalize route to file pattern
-    // Convert /api/users/123 → /api/users/:id.json if exists, or exact match
-    route = route.replace(/\/+$/, ''); // remove trailing slash
     decodedRoute = decodedRoute.replace(/\/+$/, '');
-
-    const cacheKey = `${method}:${route}`;
-    if (this.routeCache.has(cacheKey)) {
-      return this.routeCache.get(cacheKey);
-    }
-
-    // Prevent OOM from malicious probing
-    if (this.routeCache.size > 10000) {
-      this.routeCache.clear();
-    }
 
     this.getMockFiles(); // ensure caches are populated
     const exactMatchPath = `${method}-${decodedRoute}.json`;
