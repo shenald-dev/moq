@@ -59,3 +59,6 @@ Learning:
 Moving the route cache key generation and check earlier in `resolveMockPath` optimizes performance. By generating the key and checking the cache before expensive operations like `decodeURIComponent`, regex manipulation, and directory traversal checks, we can serve repeated valid requests significantly faster. However, we MUST NOT cache invalid requests (like malformed URIs or traversal attempts) as null, because malicious fuzzing tools generate unique paths. Caching them would rapidly fill the cache, trigger the eviction policy, and cause cache thrashing for legitimate users.
 Action:
 Always perform caching checks at the very beginning of a lookup function before executing expensive parsing, decoding, or validation. Never cache unvalidated or maliciously formed input keys, as this creates a cache thrashing vulnerability.
+2024-04-19 — Cache dynamic route segment decoding
+Learning: `decodeURIComponent` inside a nested loop for every dynamic route candidate caused a substantial performance bottleneck during path resolution when many dynamic routes exist.
+Action: Hoist segment decoding out of the candidate loop to evaluate exactly once, reducing redundant parsing on the hot path and significantly speeding up worst-case route lookup times.
