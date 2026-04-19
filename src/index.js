@@ -183,21 +183,28 @@ class MoqServer {
     // Use the original route to split so that encoded slashes (%2F) don't alter the part count,
     // then decode the part before comparing to support decoded matches.
     const parts = route.split('/');
+    let decodedParts = null;
 
     for (const candidate of this.dynamicRoutes) {
       if (candidate.method === method && candidate.parts.length === parts.length) {
+        if (!decodedParts) {
+          decodedParts = parts.map(part => {
+            let decoded = part;
+            try {
+              decoded = decodeURIComponent(part);
+              if (decoded.includes('%')) {
+                try { decoded = decodeURIComponent(decoded); } catch (e) {}
+              }
+            } catch (e) {}
+            return decoded;
+          });
+        }
+
         let match = true;
         for (let i = 0; i < candidate.parts.length; i++) {
           if (candidate.parts[i].startsWith(':') && candidate.parts[i].length > 1) continue;
-          let decodedPart = parts[i];
-          try {
-            decodedPart = decodeURIComponent(parts[i]);
-            if (decodedPart.includes('%')) {
-              try { decodedPart = decodeURIComponent(decodedPart); } catch (e) {}
-            }
-          } catch (e) {}
 
-          if (candidate.parts[i] !== decodedPart) {
+          if (candidate.parts[i] !== decodedParts[i]) {
             match = false;
             break;
           }
