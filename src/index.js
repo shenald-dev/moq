@@ -217,7 +217,6 @@ class MoqServer {
       }
     }
 
-    this.routeCache.set(cacheKey, null);
     return null;
   }
 
