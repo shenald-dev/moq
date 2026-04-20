@@ -350,6 +350,7 @@ class MoqServer {
         res.destroy(err);
       });
       res.on('error', err => {
+        console.error('Response stream error:', err.message);
         proxyRes.destroy(err);
       });
       proxyRes.pipe(res);
@@ -375,6 +376,7 @@ class MoqServer {
     });
 
     req.on('error', err => {
+      console.error('Request stream error:', err.message);
       proxyReq.destroy(err);
     });
 
