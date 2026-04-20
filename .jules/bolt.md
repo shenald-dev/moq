@@ -70,3 +70,9 @@ When utilizing direct stream piping (`req.pipe(proxyReq)` and `proxyRes.pipe(res
 
 Action:
 Always attach explicit `.on('error', err => target.destroy(err))` listeners on both sides of a proxy pipe in Node.js (i.e., attach an error listener to `req` to destroy `proxyReq`, and to `res` to destroy `proxyRes`).
+
+## 2024-05-18 — Unmatched Route Cache Poisoning
+Learning:
+Caching 'not found' or unmatched requests (e.g. valid routes that simply don't map to a file) as `null` creates a cache poisoning and Denial of Service (DoS) vulnerability. Attackers can flood the server with random, unique URL paths, causing the cache object to grow indefinitely until it triggers a memory leak or evicts all legitimate cache entries via the size-cap limit.
+Action:
+Never cache misses on dynamically evaluated or user-provided input strings in bounded memory structures unless those inputs are strictly validated against a known, small subset.

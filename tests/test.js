@@ -153,6 +153,23 @@ async function runTests() {
     failed++;
   }
 
+  // Test 7: Caching of unmatched routes (DoS prevention)
+  try {
+    const startSize = server.routeCache.size;
+    await request('GET', '/api/completely-unknown-route', port);
+    const endSize = server.routeCache.size;
+    if (endSize === startSize && !server.routeCache.has('GET:/api/completely-unknown-route')) {
+      console.log('✅ Unmatched routes are not cached (DoS prevention)');
+      passed++;
+    } else {
+      console.log('❌ Unmatched routes are cached (DoS risk)');
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Unmatched routes cache test error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 
