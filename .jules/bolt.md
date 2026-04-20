@@ -62,3 +62,11 @@ Always perform caching checks at the very beginning of a lookup function before 
 2024-04-19 — Cache dynamic route segment decoding
 Learning: `decodeURIComponent` inside a nested loop for every dynamic route candidate caused a substantial performance bottleneck during path resolution when many dynamic routes exist.
 Action: Hoist segment decoding out of the candidate loop to evaluate exactly once, reducing redundant parsing on the hot path and significantly speeding up worst-case route lookup times.
+
+## 2024-06-25 — Prevent Unhandled Stream Errors on Proxies
+
+Learning:
+When utilizing direct stream piping (`req.pipe(proxyReq)` and `proxyRes.pipe(res)`) in Express apps operating as reverse proxies, `error` events from one stream do not automatically propagate and safely destroy the other. Unhandled `error` events on either the client's Request (`req`) or Response (`res`) stream—such as abrupt client disconnects or aborted connections—will propagate to the global process and crash the Node.js application.
+
+Action:
+Always attach explicit `.on('error', err => target.destroy(err))` listeners on both sides of a proxy pipe in Node.js (i.e., attach an error listener to `req` to destroy `proxyReq`, and to `res` to destroy `proxyRes`).
