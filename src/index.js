@@ -349,6 +349,9 @@ class MoqServer {
         console.error('Proxy response error:', err.message);
         res.destroy(err);
       });
+      res.on('error', err => {
+        proxyRes.destroy(err);
+      });
       proxyRes.pipe(res);
     });
 
@@ -369,6 +372,10 @@ class MoqServer {
 
     req.on('aborted', () => {
       proxyReq.destroy();
+    });
+
+    req.on('error', err => {
+      proxyReq.destroy(err);
     });
 
     req.pipe(proxyReq);
