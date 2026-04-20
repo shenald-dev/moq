@@ -50,3 +50,11 @@ Pruned dead and unreferenced code (hasMock, matchDynamic, normalizePath) from sr
 
 Alignment / Deferred:
 Aligned README.md to accurately document the Node.js/Express technical stack. Documented bug fixes, performance improvements (O(1) Map routing, fs.promises, connection pooling) and lifecycle pruning in CHANGELOG.md. Minor version bumped to v0.2.0.
+
+2026-04-20 — Assessment & Lifecycle
+
+Observation / Pruned:
+Observed fix for dynamic route lookup scaling via memoization of decoded parts array in `resolveMockPath`. Verified its correctness via tests and runtime check. Optimization is robust; no dead code was pruned during this run.
+
+Alignment / Deferred:
+Safe dependency bumps checked (none applied, major bumps deferred for express/yargs/chokidar). Packaged v0.2.6.
