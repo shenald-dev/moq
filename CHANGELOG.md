@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.6
+
+* **Performance:**
+  * Optimized dynamic route matching by evaluating and decoding route segments exactly once per request, rather than repeatedly inside the candidate evaluation loop.
+* **Lifecycle / Maintenance:**
+  * Verified stability of routing optimization via test suite execution. No new dead code found to prune.
+  * Packaged release v0.2.6.
+
 ## v0.2.5
 
 * **Security:**
