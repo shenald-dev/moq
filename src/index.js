@@ -354,8 +354,8 @@ class MoqServer {
         proxyRes.destroy(err);
       });
       res.on('close', () => {
-        proxyRes.destroy();
-        proxyReq.destroy();
+        if (!proxyRes.destroyed) proxyRes.destroy();
+        if (!proxyReq.destroyed) proxyReq.destroy();
       });
       proxyRes.pipe(res);
     });
