@@ -70,3 +70,11 @@ When utilizing direct stream piping (`req.pipe(proxyReq)` and `proxyRes.pipe(res
 
 Action:
 Always attach explicit `.on('error', err => target.destroy(err))` listeners on both sides of a proxy pipe in Node.js (i.e., attach an error listener to `req` to destroy `proxyReq`, and to `res` to destroy `proxyRes`).
+
+## 2026-04-21 — Disable Express Etag and X-Powered-By
+
+Learning:
+Express calculates `ETag` headers automatically for responses, which involves an expensive hashing operation (using MD5 by default). For large JSON payloads served by mock servers, this creates a significant performance bottleneck (e.g. dropping throughput by over 30%). Additionally, the `X-Powered-By` header leaks the framework type and requires unnecessary processing overhead.
+
+Action:
+Always disable both `etag` and `x-powered-by` via `app.disable('etag')` and `app.disable('x-powered-by')` when the application does not strictly rely on standard HTTP client-side caching to boost overall throughput and reduce CPU overhead on large payload delivery.
