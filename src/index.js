@@ -353,6 +353,10 @@ class MoqServer {
       res.on('error', err => {
         proxyRes.destroy(err);
       });
+      res.on('close', () => {
+        proxyRes.destroy();
+        proxyReq.destroy();
+      });
       proxyRes.pipe(res);
     });
 
