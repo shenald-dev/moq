@@ -24,6 +24,8 @@ class MoqServer {
     this.httpAgent = new http.Agent({ keepAlive: true });
     this.httpsAgent = new https.Agent({ keepAlive: true });
     this.app = express();
+    this.app.disable('x-powered-by');
+    this.app.disable('etag');
     this.mockFilesCache = null;
     this.mockFilesSet = null;
     this.dynamicRoutes = null;
