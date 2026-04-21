@@ -78,3 +78,9 @@ Express calculates `ETag` headers automatically for responses, which involves an
 
 Action:
 Always disable both `etag` and `x-powered-by` via `app.disable('etag')` and `app.disable('x-powered-by')` when the application does not strictly rely on standard HTTP client-side caching to boost overall throughput and reduce CPU overhead on large payload delivery.
+
+2026-04-21 — Prevent proxy connection leaks on response close
+Learning:
+When acting as a reverse proxy, if the downstream client response (`res`) abruptly closes (e.g. client disconnects prematurely), the upstream HTTP request (`proxyReq`) and response (`proxyRes`) aren't necessarily torn down immediately by node stream mechanisms, which can leak open keep-alive connections to the upstream target.
+Action:
+In addition to handling stream `error` events, always attach a `.on('close')` event listener to the client response object (`res.on('close')`) that explicitly calls `proxyReq.destroy()` and `proxyRes.destroy()` to aggressively clean up pending requests and prevent socket exhaustion when clients disconnect.
