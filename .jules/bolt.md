@@ -84,3 +84,9 @@ Learning:
 When acting as a reverse proxy, if the downstream client response (`res`) abruptly closes (e.g. client disconnects prematurely), the upstream HTTP request (`proxyReq`) and response (`proxyRes`) aren't necessarily torn down immediately by node stream mechanisms, which can leak open keep-alive connections to the upstream target.
 Action:
 In addition to handling stream `error` events, always attach a `.on('close')` event listener to the client response object (`res.on('close')`) that explicitly calls `proxyReq.destroy()` and `proxyRes.destroy()` to aggressively clean up pending requests and prevent socket exhaustion when clients disconnect.
+
+2024-05-18 — Dynamic Route O(1) Candidate Retrieval
+Learning:
+Previously, dynamic route matching for unmocked endpoints (e.g., proxied requests or 404s) resulted in an O(N) traversal across the entire `dynamicRoutes` array on every request, creating a performance bottleneck on hot paths since we deliberately do not cache `null` lookup results to prevent cache thrashing.
+Action:
+Group `dynamicRoutes` into a `Map` structured by `${method}:${parts.length}`. This optimization enables O(1) retrieval of applicable route candidates, bypassing the array allocation and iterative evaluation loop entirely for requests that do not match the expected path segment count.
