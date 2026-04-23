@@ -56,3 +56,7 @@
 ## v0.1.0
 
 * Initial release.
+
+## [0.2.7] - 2024-05-18
+### Performance
+- Optimized dynamic route matching to use O(1) candidate retrieval, significantly reducing overhead for unmocked endpoints like proxies or 404s.
