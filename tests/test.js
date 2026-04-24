@@ -153,6 +153,36 @@ async function runTests() {
     failed++;
   }
 
+  // Test 7: dynamic route edge cases (Map lookup validation)
+  try {
+    const fs = require('fs');
+    fs.mkdirSync(path.join(mocksDir, 'GET-'), { recursive: true });
+    fs.mkdirSync(path.join(mocksDir, 'GET-', 'api', 'posts', ':slug', 'comments'), { recursive: true });
+    fs.writeFileSync(path.join(mocksDir, 'GET-', 'api', 'posts', ':slug', 'comments', ':id.json'), JSON.stringify({ comment: "Edge case map test" }));
+    server.reloadMocks(); // Manually trigger reload
+
+    const r = await request('GET', '/api/posts/my-post/comments/456/', port); // Request with trailing slash
+    if (r.status === 200 && r.body && r.body.comment === 'Edge case map test') {
+      console.log('✅ Dynamic Route Map Lookup Edge Cases');
+      passed++;
+    } else {
+      console.log('❌ Dynamic Route Map Lookup failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Dynamic Route Map Lookup error', e);
+    failed++;
+  } finally {
+    const fs = require('fs');
+    if (fs.existsSync(path.join(mocksDir, 'GET-', 'api', 'posts', ':slug', 'comments', ':id.json'))) {
+      fs.unlinkSync(path.join(mocksDir, 'GET-', 'api', 'posts', ':slug', 'comments', ':id.json'));
+      fs.rmdirSync(path.join(mocksDir, 'GET-', 'api', 'posts', ':slug', 'comments'));
+      fs.rmdirSync(path.join(mocksDir, 'GET-', 'api', 'posts', ':slug'));
+      fs.rmdirSync(path.join(mocksDir, 'GET-', 'api', 'posts'));
+    }
+    server.reloadMocks(); // reset
+  }
+
   // Cleanup
   httpServer.close();
 
