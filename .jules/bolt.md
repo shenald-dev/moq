@@ -90,3 +90,11 @@ Learning:
 Previously, dynamic route matching for unmocked endpoints (e.g., proxied requests or 404s) resulted in an O(N) traversal across the entire `dynamicRoutes` array on every request, creating a performance bottleneck on hot paths since we deliberately do not cache `null` lookup results to prevent cache thrashing.
 Action:
 Group `dynamicRoutes` into a `Map` structured by `${method}:${parts.length}`. This optimization enables O(1) retrieval of applicable route candidates, bypassing the array allocation and iterative evaluation loop entirely for requests that do not match the expected path segment count.
+
+## 2024-05-18 — Dynamic Route Matching Optimization
+
+Learning:
+Using a Map to group dynamic routes by HTTP method and route part count replaces O(N) array iteration with an O(1) retrieval for candidate matches, avoiding CPU overhead during fallback routing.
+
+Action:
+Prefer indexed collections like Maps and Sets over array scans on critical paths with many lookups to ensure performance scalability.
