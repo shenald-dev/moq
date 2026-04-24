@@ -153,11 +153,63 @@ async function runTests() {
     failed++;
   }
 
-  // Cleanup
-  httpServer.close();
+  // Test 7: proxy throw prevention
+  try {
+    const net = require('net');
 
-  console.log(`\n📊 Tests: ${passed} passed, ${failed} failed`);
-  process.exit(failed > 0 ? 1 : 0);
+    // We set up a temporary target server for proxy
+    const express = require('express');
+    const targetApp = express();
+    targetApp.get('/test', (req, res) => res.json({ ok: true }));
+    const targetServer = targetApp.listen(0, async () => {
+      const targetPort = targetServer.address().port;
+
+      const proxyServer = new MoqServer({ port: 3334, mocksDir, proxy: true, proxyTarget: `http://localhost:${targetPort}`, noReload: true });
+      const proxyHttpServer = proxyServer.app.listen(3334, () => {
+        const client = net.createConnection({ port: 3334 }, () => {
+          client.write("GET /test HTTP/1.1\r\nHost: localhost\r\ninvalid\x01header: test\r\n\r\n");
+        });
+
+        let responseData = '';
+        client.on('data', d => responseData += d);
+        client.on('end', () => {
+          if (responseData.includes('502 Bad Gateway') || responseData.includes('400 Bad Request')) {
+            console.log('✅ Proxy throw prevention');
+            passed++;
+          } else {
+            console.log('❌ Proxy throw prevention failed, got:', responseData);
+            failed++;
+          }
+
+          targetServer.close();
+          proxyHttpServer.close();
+
+          // Cleanup
+          httpServer.close();
+
+          console.log(`\n📊 Tests: ${passed} passed, ${failed} failed`);
+          process.exit(failed > 0 ? 1 : 0);
+        });
+        client.on('error', e => {
+           console.log('❌ Proxy throw prevention error:', e);
+           failed++;
+           targetServer.close();
+           proxyHttpServer.close();
+           httpServer.close();
+           console.log(`\n📊 Tests: ${passed} passed, ${failed} failed`);
+           process.exit(1);
+        });
+      });
+    });
+  } catch (e) {
+    console.log('❌ Proxy throw prevention test error', e);
+    failed++;
+    // Cleanup
+    httpServer.close();
+
+    console.log(`\n📊 Tests: ${passed} passed, ${failed} failed`);
+    process.exit(failed > 0 ? 1 : 0);
+  }
 }
 
 runTests().catch(err => {
