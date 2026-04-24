@@ -187,8 +187,9 @@ class MoqServer {
     const parts = route.split('/');
     let decodedParts = null;
 
-    for (const candidate of this.dynamicRoutes) {
-      if (candidate.method === method && candidate.parts.length === parts.length) {
+    const dynamicCandidates = this.dynamicRoutes.get(`${method}:${parts.length}`);
+    if (dynamicCandidates) {
+      for (const candidate of dynamicCandidates) {
         if (!decodedParts) {
           decodedParts = parts.map(part => {
             let decoded = part;
@@ -227,13 +228,13 @@ class MoqServer {
     if (!fs.existsSync(this.mocksDir)) {
       this.mockFilesCache = [];
       this.mockFilesSet = new Set();
-      this.dynamicRoutes = [];
+      this.dynamicRoutes = new Map();
       return this.mockFilesCache;
     }
     this.mockFilesCache = this.readDirRecursive(this.mocksDir, '');
     this.mockFilesSet = new Set(this.mockFilesCache);
 
-    this.dynamicRoutes = [];
+    this.dynamicRoutes = new Map();
     for (const file of this.mockFilesCache) {
       const methodEnd = file.indexOf('-');
       if (methodEnd === -1 || !file.endsWith('.json')) continue;
@@ -242,10 +243,15 @@ class MoqServer {
       const fileRoute = file.slice(methodEnd + 1, -'.json'.length);
 
       if (fileRoute.includes(':')) {
-        this.dynamicRoutes.push({
+        const parts = fileRoute.split('/');
+        const key = `${method}:${parts.length}`;
+        if (!this.dynamicRoutes.has(key)) {
+          this.dynamicRoutes.set(key, []);
+        }
+        this.dynamicRoutes.get(key).push({
           method,
           file,
-          parts: fileRoute.split('/')
+          parts
         });
       }
     }
