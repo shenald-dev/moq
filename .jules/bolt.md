@@ -98,3 +98,9 @@ Using a Map to group dynamic routes by HTTP method and route part count replaces
 
 Action:
 Prefer indexed collections like Maps and Sets over array scans on critical paths with many lookups to ensure performance scalability.
+
+2024-06-26 — Prevent Synchronous Crashes on Proxy Client Request Initialization
+Learning:
+When utilizing `http.request` or `https.request` in Node.js to proxy requests, constructing the client request (e.g., `transport.request(options, ...)`) can throw synchronous exceptions (such as `ERR_INVALID_CHAR` or `ERR_INVALID_HTTP_TOKEN`) if the incoming request contains invalid or malformed header characters. Because this exception is thrown synchronously during initialization, it bypasses standard asynchronous error event listeners and the Express global error handler, crashing the entire Node process.
+Action:
+Always wrap the instantiation of outgoing `transport.request` calls in a `try-catch` block to safely catch synchronous initialization errors and return an appropriate gateway error response, ensuring process stability against malformed upstream proxy requests.
