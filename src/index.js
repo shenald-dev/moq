@@ -343,28 +343,37 @@ class MoqServer {
       agent: isHttps ? this.httpsAgent : this.httpAgent
     };
 
-    const proxyReq = transport.request(options, proxyRes => {
-      res.status(proxyRes.statusCode);
-      for (const [key, value] of Object.entries(proxyRes.headers)) {
-        try {
-          res.setHeader(key, value);
-        } catch (err) {
-          console.error(`Warning: Failed to set header ${key}: ${err.message}`);
+    let proxyReq;
+    try {
+      proxyReq = transport.request(options, proxyRes => {
+        res.status(proxyRes.statusCode);
+        for (const [key, value] of Object.entries(proxyRes.headers)) {
+          try {
+            res.setHeader(key, value);
+          } catch (err) {
+            console.error(`Warning: Failed to set header ${key}: ${err.message}`);
+          }
         }
+        proxyRes.on('error', err => {
+          console.error('Proxy response error:', err.message);
+          res.destroy(err);
+        });
+        res.on('error', err => {
+          proxyRes.destroy(err);
+        });
+        res.on('close', () => {
+          proxyRes.destroy();
+          proxyReq.destroy();
+        });
+        proxyRes.pipe(res);
+      });
+    } catch (err) {
+      console.error('Proxy request initialization error:', err.message);
+      if (!res.headersSent) {
+        res.status(502).json({ error: 'Bad gateway' });
       }
-      proxyRes.on('error', err => {
-        console.error('Proxy response error:', err.message);
-        res.destroy(err);
-      });
-      res.on('error', err => {
-        proxyRes.destroy(err);
-      });
-      res.on('close', () => {
-        proxyRes.destroy();
-        proxyReq.destroy();
-      });
-      proxyRes.pipe(res);
-    });
+      return;
+    }
 
     // Timeout after 10s to prevent hanging on slow/unresponsive upstreams
     proxyReq.setTimeout(10000, () => {
