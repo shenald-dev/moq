@@ -108,3 +108,6 @@ Always wrap the instantiation of outgoing `transport.request` calls in a `try-ca
 ## 2024-04-25 — Optimize decodeURIComponent Hot Path
 Learning: Calling `decodeURIComponent` (and initializing its associated `try...catch` block) incurs unnecessary overhead for standard strings. By definition, URL encoding relies on the `%` character. Strings lacking a `%` will remain unmodified.
 Action: Always wrap `decodeURIComponent` inside an `if (string.includes('%'))` check on hot paths (like routing) to bypass expensive native execution and V8 deoptimizations when decoding is not required.
+2024-04-26 — Optimize hot path string operations
+Learning: Using regex like `replace(/\/+$/, '')`, `startsWith`, and array allocations (like splitting an unencoded URL path) inside hot paths like Express middleware (`resolveMockPath` and `proxyRequest`) adds measurable overhead per request.
+Action: Replaced regex and simple prefix checks with fast manual string traversal using `charCodeAt()` and `slice()` to reduce memory allocation and string parsing time. Always prefer `charCodeAt(0)` over `startsWith(char)` for single characters on critical paths.

@@ -12,6 +12,13 @@ const http = require('http');
 const https = require('https');
 
 class MoqServer {
+  _trimTrailingSlashes(str) {
+    if (str.length === 0) return str;
+    let j = str.length - 1;
+    while (j >= 0 && str.charCodeAt(j) === 47) j--;
+    return j === str.length - 1 ? str : str.slice(0, j + 1);
+  }
+
   constructor(options = {}) {
     this.port = options.port || 3000;
     this.mocksDir = options.mocksDir || './mocks';
@@ -135,7 +142,7 @@ class MoqServer {
   resolveMockPath(method, route) {
     // Normalize route to file pattern
     // Convert /api/users/123 → /api/users/:id.json if exists, or exact match
-    route = route.replace(/\/+$/, ''); // remove trailing slash
+    route = this._trimTrailingSlashes(route); // remove trailing slash
 
     const cacheKey = `${method}:${route}`;
     if (this.routeCache.has(cacheKey)) {
@@ -171,7 +178,7 @@ class MoqServer {
       return null;
     }
 
-    decodedRoute = decodedRoute.replace(/\/+$/, '');
+    decodedRoute = this._trimTrailingSlashes(decodedRoute);
 
     this.getMockFiles(); // ensure caches are populated
     const exactMatchPath = `${method}-${decodedRoute}.json`;
@@ -209,7 +216,7 @@ class MoqServer {
 
         let match = true;
         for (let i = 0; i < candidate.parts.length; i++) {
-          if (candidate.parts[i].startsWith(':') && candidate.parts[i].length > 1) continue;
+          if (candidate.parts[i].charCodeAt(0) === 58 && candidate.parts[i].length > 1) continue;
 
           if (candidate.parts[i] !== decodedParts[i]) {
             match = false;
@@ -325,7 +332,7 @@ class MoqServer {
 
   proxyRequest(req, res) {
     const reqPath = req.originalUrl || req.url;
-    const targetUrl = this.proxyTarget.replace(/\/$/, '') + (reqPath.startsWith('/') ? reqPath : `/${reqPath}`);
+    const targetUrl = this._trimTrailingSlashes(this.proxyTarget) + (reqPath.charCodeAt(0) === 47 ? reqPath : `/${reqPath}`);
     let parsed;
     try {
       parsed = new URL(targetUrl);
