@@ -148,6 +148,7 @@ class MoqServer {
     }
 
     let decodedRoute = route;
+    // URL encoding uses '%'. Skip decoding if '%' is not present to avoid unnecessary overhead in hot paths.
     if (route.includes('%')) {
       try {
         decodedRoute = decodeURIComponent(route);
@@ -195,6 +196,7 @@ class MoqServer {
         if (!decodedParts) {
           decodedParts = parts.map(part => {
             let decoded = part;
+            // URL encoding uses '%'. Skip decoding if '%' is not present to avoid unnecessary overhead in hot paths.
             if (part.includes('%')) {
               try {
                 decoded = decodeURIComponent(part);
