@@ -104,3 +104,7 @@ Learning:
 When utilizing `http.request` or `https.request` in Node.js to proxy requests, constructing the client request (e.g., `transport.request(options, ...)`) can throw synchronous exceptions (such as `ERR_INVALID_CHAR` or `ERR_INVALID_HTTP_TOKEN`) if the incoming request contains invalid or malformed header characters. Because this exception is thrown synchronously during initialization, it bypasses standard asynchronous error event listeners and the Express global error handler, crashing the entire Node process.
 Action:
 Always wrap the instantiation of outgoing `transport.request` calls in a `try-catch` block to safely catch synchronous initialization errors and return an appropriate gateway error response, ensuring process stability against malformed upstream proxy requests.
+
+## 2024-04-25 — Optimize decodeURIComponent Hot Path
+Learning: Calling `decodeURIComponent` (and initializing its associated `try...catch` block) incurs unnecessary overhead for standard strings. By definition, URL encoding relies on the `%` character. Strings lacking a `%` will remain unmodified.
+Action: Always wrap `decodeURIComponent` inside an `if (string.includes('%'))` check on hot paths (like routing) to bypass expensive native execution and V8 deoptimizations when decoding is not required.

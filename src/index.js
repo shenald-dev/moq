@@ -148,20 +148,22 @@ class MoqServer {
     }
 
     let decodedRoute = route;
-    try {
-      decodedRoute = decodeURIComponent(route);
-      // If the decoded route still contains '%', it might be double-encoded.
-      // Try to decode it again to catch bypasses, but if it throws (e.g. valid literal '%'),
-      // keep the first pass decoding.
-      if (decodedRoute.includes('%')) {
-        try {
-          decodedRoute = decodeURIComponent(decodedRoute);
-        } catch (e) {
-          // Ignore error, keep single decoded string
+    if (route.includes('%')) {
+      try {
+        decodedRoute = decodeURIComponent(route);
+        // If the decoded route still contains '%', it might be double-encoded.
+        // Try to decode it again to catch bypasses, but if it throws (e.g. valid literal '%'),
+        // keep the first pass decoding.
+        if (decodedRoute.includes('%')) {
+          try {
+            decodedRoute = decodeURIComponent(decodedRoute);
+          } catch (e) {
+            // Ignore error, keep single decoded string
+          }
         }
+      } catch (e) {
+        return null;
       }
-    } catch (e) {
-      return null;
     }
 
     // Directory traversal prevention
@@ -193,12 +195,14 @@ class MoqServer {
         if (!decodedParts) {
           decodedParts = parts.map(part => {
             let decoded = part;
-            try {
-              decoded = decodeURIComponent(part);
-              if (decoded.includes('%')) {
-                try { decoded = decodeURIComponent(decoded); } catch (e) {}
-              }
-            } catch (e) {}
+            if (part.includes('%')) {
+              try {
+                decoded = decodeURIComponent(part);
+                if (decoded.includes('%')) {
+                  try { decoded = decodeURIComponent(decoded); } catch (e) {}
+                }
+              } catch (e) {}
+            }
             return decoded;
           });
         }
