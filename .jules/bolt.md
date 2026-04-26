@@ -119,3 +119,7 @@ When handling proxied requests, allocating and executing `new URL(targetUrl)` in
 
 Action:
 Pre-parse the `proxyTarget` in the `MoqServer` constructor just once when proxying is enabled, and store the resulting hostname, port, and base path. Use fast string concatenation on the hot path in `proxyRequest` to build the target path rather than re-parsing the entire URL.
+
+## 2026-04-26 — Fix multiple URL-encoding traversal and Optimize split
+Learning: The previous fix for URL-encoded path traversal only decoded paths up to two times. A triple URL-encoded path (e.g., `%25252E...`) successfully bypassed the `..` validation, creating a vulnerability. Furthermore, using `split('/')` unconditionally on every route check incurred expensive string allocations even when no mock candidate could possibly match the segment count.
+Action: Secure URL decoding by utilizing a safe `while` loop that decodes recursively up to a strict limit (e.g., 5) as long as `%` characters exist. Avoid allocating arrays with `split('/')` in hot paths by counting slashes (`charCodeAt(0) === 47`) and returning early if there are no candidates for that segment depth.
