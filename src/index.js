@@ -170,21 +170,16 @@ class MoqServer {
     }
 
     let decodedRoute = route;
-    if (route.includes('%')) {
+    let depth = 0;
+    while (decodedRoute.includes('%') && depth < 10) {
       try {
-        decodedRoute = decodeURIComponent(route);
-        // If the decoded route still contains '%', it might be double-encoded.
-        // Try to decode it again to catch bypasses, but if it throws (e.g. valid literal '%'),
-        // keep the first pass decoding.
-        if (decodedRoute.includes('%')) {
-          try {
-            decodedRoute = decodeURIComponent(decodedRoute);
-          } catch (e) {
-            // Ignore error, keep single decoded string
-          }
-        }
+        let next = decodeURIComponent(decodedRoute);
+        if (next === decodedRoute) break;
+        decodedRoute = next;
+        depth++;
       } catch (e) {
-        return null;
+        if (depth === 0) return null;
+        break; // Ignore further errors, keep last valid decoded string
       }
     }
 
@@ -208,22 +203,31 @@ class MoqServer {
     // Try dynamic: if /api/users/123 doesn't match, try /api/users/:id.json
     // Use the original route to split so that encoded slashes (%2F) don't alter the part count,
     // then decode the part before comparing to support decoded matches.
-    const parts = route.split('/');
-    let decodedParts = null;
+    let slashes = 0;
+    for (let i = 0; i < route.length; i++) {
+      if (route.charCodeAt(i) === 47) slashes++;
+    }
+    const partCount = slashes + 1;
 
-    const dynamicCandidates = this.dynamicRoutes.get(`${method}:${parts.length}`);
+    const dynamicCandidates = this.dynamicRoutes.get(`${method}:${partCount}`);
     if (dynamicCandidates) {
+      const parts = route.split('/');
+      let decodedParts = null;
+
       for (const candidate of dynamicCandidates) {
         if (!decodedParts) {
           decodedParts = parts.map(part => {
             let decoded = part;
-            if (part.includes('%')) {
+            let depth = 0;
+            while (decoded.includes('%') && depth < 10) {
               try {
-                decoded = decodeURIComponent(part);
-                if (decoded.includes('%')) {
-                  try { decoded = decodeURIComponent(decoded); } catch (e) {}
-                }
-              } catch (e) {}
+                let next = decodeURIComponent(decoded);
+                if (next === decoded) break;
+                decoded = next;
+                depth++;
+              } catch (e) {
+                break;
+              }
             }
             return decoded;
           });

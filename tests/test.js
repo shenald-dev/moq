@@ -153,6 +153,51 @@ async function runTests() {
     failed++;
   }
 
+  // Test 7: Triple URL encoded traversal prevention
+  try {
+    const r = await request('GET', '/api/%25252E%25252E/secret', port);
+    if (r.status === 404 && r.body && r.body.error === 'Not found') {
+      console.log('✅ Triple URL traversal prevention');
+      passed++;
+    } else {
+      console.log('❌ Triple URL traversal prevention failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Triple URL traversal prevention error', e);
+    failed++;
+  }
+
+  // Test 8: Dynamic route matching with trailing slash
+  try {
+    const r = await request('GET', '/api/users/123/', port);
+    if (r.status === 200 && r.body && r.body.id === 123) {
+      console.log('✅ Dynamic route matching with trailing slash');
+      passed++;
+    } else {
+      console.log('❌ Dynamic route matching with trailing slash failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Dynamic route matching with trailing slash error', e);
+    failed++;
+  }
+
+  // Test 9: Route matching with double slash
+  try {
+    const r = await request('GET', '/api//users', port);
+    if (r.status === 404 && r.body && r.body.error === 'Not found') {
+      console.log('✅ Route matching with double slash correctly returns 404');
+      passed++;
+    } else {
+      console.log('❌ Route matching with double slash failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Route matching with double slash error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 
