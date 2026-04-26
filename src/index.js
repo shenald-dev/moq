@@ -26,6 +26,21 @@ class MoqServer {
     this.proxyTarget = options.proxyTarget;
     this.noReload = options.noReload || false;
 
+    if (this.proxyMode && this.proxyTarget) {
+      try {
+        const parsed = new URL(this.proxyTarget);
+        this.proxyIsHttps = parsed.protocol === 'https:';
+        this.proxyHostname = parsed.hostname;
+        this.proxyPort = parsed.port || (this.proxyIsHttps ? 443 : 80);
+        this.proxyBasePath = this._trimTrailingSlashes(parsed.pathname);
+        this.parsedProxyTarget = true;
+      } catch (err) {
+        console.error(`Invalid proxy target URL in options: ${this.proxyTarget}`);
+        this.parsedProxyTarget = false;
+      }
+    } else {
+      this.parsedProxyTarget = false;
+    }
 
     // HTTP/HTTPS connection pooling for proxy mode
     this.httpAgent = new http.Agent({ keepAlive: true });
@@ -331,27 +346,24 @@ class MoqServer {
   }
 
   proxyRequest(req, res) {
-    const reqPath = req.originalUrl || req.url;
-    const targetUrl = this._trimTrailingSlashes(this.proxyTarget) + (reqPath.charCodeAt(0) === 47 ? reqPath : `/${reqPath}`);
-    let parsed;
-    try {
-      parsed = new URL(targetUrl);
-    } catch (err) {
-      console.error(`Invalid proxy target URL: ${targetUrl}`);
+    if (!this.parsedProxyTarget) {
       if (!res.headersSent) {
-        res.status(500).json({ error: 'Invalid proxy target URL' });
+        res.status(500).json({ error: 'Invalid proxy target URL configuration' });
       }
       return;
     }
-    const isHttps = parsed.protocol === 'https:';
-    const transport = isHttps ? https : http;
+
+    const reqPath = req.originalUrl || req.url;
+    const targetPath = this.proxyBasePath + (reqPath.charCodeAt(0) === 47 ? reqPath : `/${reqPath}`);
+
+    const transport = this.proxyIsHttps ? https : http;
     const options = {
-      hostname: parsed.hostname,
-      port: parsed.port || (isHttps ? 443 : 80),
-      path: parsed.pathname + parsed.search,
+      hostname: this.proxyHostname,
+      port: this.proxyPort,
+      path: targetPath,
       method: req.method,
-      headers: { ...req.headers, host: parsed.hostname },
-      agent: isHttps ? this.httpsAgent : this.httpAgent
+      headers: { ...req.headers, host: this.proxyHostname },
+      agent: this.proxyIsHttps ? this.httpsAgent : this.httpAgent
     };
 
     let proxyReq;

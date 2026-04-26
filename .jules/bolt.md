@@ -111,3 +111,11 @@ Action: Always wrap `decodeURIComponent` inside an `if (string.includes('%'))` c
 2024-04-26 — Optimize hot path string operations
 Learning: Using regex like `replace(/\/+$/, '')`, `startsWith`, and array allocations (like splitting an unencoded URL path) inside hot paths like Express middleware (`resolveMockPath` and `proxyRequest`) adds measurable overhead per request.
 Action: Replaced regex and simple prefix checks with fast manual string traversal using `charCodeAt()` and `slice()` to reduce memory allocation and string parsing time. Always prefer `charCodeAt(0)` over `startsWith(char)` for single characters on critical paths.
+
+## 2026-04-26 — Optimize Proxy URL Parsing
+
+Learning:
+When handling proxied requests, allocating and executing `new URL(targetUrl)` inside the `proxyRequest` method on every single incoming proxy request creates an expensive O(1) allocation/parsing cost that heavily degrades reverse proxy throughput.
+
+Action:
+Pre-parse the `proxyTarget` in the `MoqServer` constructor just once when proxying is enabled, and store the resulting hostname, port, and base path. Use fast string concatenation on the hot path in `proxyRequest` to build the target path rather than re-parsing the entire URL.
