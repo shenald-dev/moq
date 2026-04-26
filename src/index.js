@@ -171,7 +171,7 @@ class MoqServer {
 
     let decodedRoute = route;
     let depth = 0;
-    while (decodedRoute.includes('%') && depth < 5) {
+    while (decodedRoute.includes('%') && depth < 10) {
       try {
         let next = decodeURIComponent(decodedRoute);
         if (next === decodedRoute) break;
@@ -219,7 +219,7 @@ class MoqServer {
           decodedParts = parts.map(part => {
             let decoded = part;
             let depth = 0;
-            while (decoded.includes('%') && depth < 5) {
+            while (decoded.includes('%') && depth < 10) {
               try {
                 let next = decodeURIComponent(decoded);
                 if (next === decoded) break;
