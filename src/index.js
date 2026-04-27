@@ -208,6 +208,8 @@ class MoqServer {
     // Try dynamic: if /api/users/123 doesn't match, try /api/users/:id.json
     // Use the original route to split so that encoded slashes (%2F) don't alter the part count,
     // then decode the part before comparing to support decoded matches.
+    // Note: Leading slashes, trailing slashes (which are pre-trimmed), and empty segments
+    // are naturally handled by this count matching how String.split('/') behaves.
     let slashes = 0;
     for (let i = 0; i < route.length; i++) {
       if (route.charCodeAt(i) === 47) slashes++;
