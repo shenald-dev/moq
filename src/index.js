@@ -208,11 +208,17 @@ class MoqServer {
     // Try dynamic: if /api/users/123 doesn't match, try /api/users/:id.json
     // Use the original route to split so that encoded slashes (%2F) don't alter the part count,
     // then decode the part before comparing to support decoded matches.
-    const parts = route.split('/');
-    let decodedParts = null;
+    let slashes = 0;
+    for (let i = 0; i < route.length; i++) {
+      if (route.charCodeAt(i) === 47) slashes++;
+    }
+    const partsLength = slashes + 1;
 
-    const dynamicCandidates = this.dynamicRoutes.get(`${method}:${parts.length}`);
+    const dynamicCandidates = this.dynamicRoutes.get(`${method}:${partsLength}`);
     if (dynamicCandidates) {
+      const parts = route.split('/');
+      let decodedParts = null;
+
       for (const candidate of dynamicCandidates) {
         if (!decodedParts) {
           decodedParts = parts.map(part => {

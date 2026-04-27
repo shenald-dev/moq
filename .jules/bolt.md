@@ -119,3 +119,11 @@ When handling proxied requests, allocating and executing `new URL(targetUrl)` in
 
 Action:
 Pre-parse the `proxyTarget` in the `MoqServer` constructor just once when proxying is enabled, and store the resulting hostname, port, and base path. Use fast string concatenation on the hot path in `proxyRequest` to build the target path rather than re-parsing the entire URL.
+
+## 2024-04-27 — Optimize Dynamic Route String Allocation
+
+Learning:
+Calling `String.prototype.split('/')` unconditionally on the hot path for dynamic route resolution creates unnecessary O(N) array allocations per un-cached miss. This negatively impacts throughput when handling unrecognized paths or fallback routing.
+
+Action:
+Manually count the number of expected string segments by traversing the string (`charCodeAt(47)`) and conditionally execute `split('/')` only if dynamic route candidates actually exist for that determined segment length.
