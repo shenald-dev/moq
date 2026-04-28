@@ -58,3 +58,11 @@ Observed fix for dynamic route lookup scaling via memoization of decoded parts a
 
 Alignment / Deferred:
 Safe dependency bumps checked (none applied, major bumps deferred for express/yargs/chokidar). Packaged v0.2.6.
+
+2026-04-28 — Assessment & Lifecycle
+
+Observation / Pruned:
+Observed fix for route cache string allocation per un-cached miss during fallback routing. Verified the correctness via tests and checked that manual string traversal does not introduce regressions. No dead code required pruning since routing codebase is stable and properly optimized.
+
+Alignment / Deferred:
+Ran `npm update` to apply safe patch/minor dependency bumps. Validated survival using the test suite. Deferred major framework version bumps (express, chokidar, yargs) per standard policy. Packaged v0.2.7.
