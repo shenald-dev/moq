@@ -127,3 +127,10 @@ Calling `String.prototype.split('/')` unconditionally on the hot path for dynami
 
 Action:
 Manually count the number of expected string segments by traversing the string (`charCodeAt(47)`) and conditionally execute `split('/')` only if dynamic route candidates actually exist for that determined segment length.
+## 2024-04-28 — Path Validation Refactoring for Deep Directory Traversal
+
+Learning:
+URL decoding mechanisms inside path resolution routines must loop until no URL-encoded characters remain, capped by a safe depth limit, to avoid deep or multiple-encoded bypasses (e.g. `/%2525252E%2525252E/`). Hardcoding decoding passes is insufficient against malicious encoding schemes.
+
+Action:
+Ensure all path resolution logic utilizing `decodeURIComponent` globally applies a capped `while` loop (e.g. depth < 5) to robustly normalize deeply-encoded URI components before proceeding to validations like directory traversal checks (`..`).

@@ -153,6 +153,21 @@ async function runTests() {
     failed++;
   }
 
+  // Test 7: Triple-encoded URL traversal prevention
+  try {
+    const r = await request('GET', '/api/%2525252E%2525252E/secret', port);
+    if (r.status === 404 && r.body && r.body.error === 'Not found') {
+      console.log('✅ Triple-encoded URL traversal prevention');
+      passed++;
+    } else {
+      console.log('❌ Triple-encoded URL traversal prevention failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Triple-encoded URL traversal prevention error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 
