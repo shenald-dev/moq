@@ -171,21 +171,22 @@ class MoqServer {
 
     let decodedRoute = route;
     if (route.includes('%')) {
-      try {
-        decodedRoute = decodeURIComponent(route);
-        // If the decoded route still contains '%', it might be double-encoded.
-        // Try to decode it again to catch bypasses, but if it throws (e.g. valid literal '%'),
-        // keep the first pass decoding.
-        if (decodedRoute.includes('%')) {
-          try {
-            decodedRoute = decodeURIComponent(decodedRoute);
-          } catch (e) {
-            // Ignore error, keep single decoded string
-          }
+      let depth = 0;
+      let currentDecoded = route;
+      let hasError = false;
+      while (currentDecoded.includes('%') && depth < 5) {
+        try {
+          const nextDecoded = decodeURIComponent(currentDecoded);
+          if (nextDecoded === currentDecoded) break;
+          currentDecoded = nextDecoded;
+        } catch (e) {
+          if (depth === 0) hasError = true;
+          break;
         }
-      } catch (e) {
-        return null;
+        depth++;
       }
+      if (hasError) return null;
+      decodedRoute = currentDecoded;
     }
 
     // Directory traversal prevention
@@ -224,12 +225,19 @@ class MoqServer {
           decodedParts = parts.map(part => {
             let decoded = part;
             if (part.includes('%')) {
-              try {
-                decoded = decodeURIComponent(part);
-                if (decoded.includes('%')) {
-                  try { decoded = decodeURIComponent(decoded); } catch (e) {}
+              let depth = 0;
+              let currentDecoded = part;
+              while (currentDecoded.includes('%') && depth < 5) {
+                try {
+                  const nextDecoded = decodeURIComponent(currentDecoded);
+                  if (nextDecoded === currentDecoded) break;
+                  currentDecoded = nextDecoded;
+                } catch (e) {
+                  break;
                 }
-              } catch (e) {}
+                depth++;
+              }
+              decoded = currentDecoded;
             }
             return decoded;
           });
