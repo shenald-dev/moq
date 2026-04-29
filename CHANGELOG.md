@@ -6,7 +6,7 @@
   * Replaced `String.prototype.split` with manual string traversal on the fallback dynamic route matching hot path, eliminating unnecessary O(N) array allocations.
 * **Lifecycle / Maintenance:**
   * Verified stability of manual string traversal via test suite.
-  * Applied safe minor and patch dependency bumps.
+
   * Packaged release v0.2.7.
 
 ## v0.2.6

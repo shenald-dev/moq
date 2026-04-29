@@ -65,4 +65,4 @@ Observation / Pruned:
 Observed fix for route cache string allocation per un-cached miss during fallback routing. Verified the correctness via tests and checked that manual string traversal does not introduce regressions. No dead code required pruning since routing codebase is stable and properly optimized.
 
 Alignment / Deferred:
-Ran `npm update` to apply safe patch/minor dependency bumps. Validated survival using the test suite. Deferred major framework version bumps (express, chokidar, yargs) per standard policy. Packaged v0.2.7.
+Validated survival using the test suite. No dependencies required safe patch/minor bumps. Deferred major framework version bumps (express, chokidar, yargs) per standard policy. Packaged v0.2.7.
