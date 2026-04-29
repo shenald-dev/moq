@@ -105,10 +105,8 @@ class MoqServer {
 
     if (mockFile) {
       try {
-        let contentPromise;
-        if (this.mockDataCache.has(mockFile)) {
-          contentPromise = this.mockDataCache.get(mockFile);
-        } else {
+        let contentPromise = this.mockDataCache.get(mockFile);
+        if (!contentPromise) {
           contentPromise = fs.promises.readFile(mockFile, 'utf8').then(content => {
             try {
               JSON.parse(content); // Validate JSON
@@ -160,8 +158,9 @@ class MoqServer {
     route = this._trimTrailingSlashes(route); // remove trailing slash
 
     const cacheKey = `${method}:${route}`;
-    if (this.routeCache.has(cacheKey)) {
-      return this.routeCache.get(cacheKey);
+    const cachedRoute = this.routeCache.get(cacheKey);
+    if (cachedRoute) {
+      return cachedRoute;
     }
 
     // Prevent OOM from malicious probing
@@ -320,10 +319,8 @@ class MoqServer {
     if (this.mockFilesSet.has('404.json')) {
       const fallback = path.join(this.mocksDir, '404.json');
       try {
-        let contentPromise;
-        if (this.mockDataCache.has(fallback)) {
-          contentPromise = this.mockDataCache.get(fallback);
-        } else {
+        let contentPromise = this.mockDataCache.get(fallback);
+        if (!contentPromise) {
           contentPromise = fs.promises.readFile(fallback, 'utf8').then(content => {
             try {
               JSON.parse(content); // Validate JSON

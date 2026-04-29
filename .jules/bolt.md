@@ -141,3 +141,6 @@ Learning:
 
 Action:
 Use `for...in` for header iteration, mutate temporary split arrays in-place when url decoding, and cache `.get()` results for Maps instead of checking `.has()`.
+2024-04-29 — Map Retrieval Optimization
+Learning: Avoid O(2) double-lookups (`Map.has(key)` followed by `Map.get(key)`) in hot paths like route mapping and payload fetching.
+Action: Assign `Map.get(key)` result directly and check truthiness instead to cut redundant dictionary searches in Express routing flows.
