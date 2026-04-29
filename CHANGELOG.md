@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.7
+
+* **Security:**
+  * Fixed deep URL-encoded directory traversal vulnerabilities by limiting decoding depth to 5 loops, preventing DoS and bypasses.
+* **Lifecycle / Maintenance:**
+  * Validated the security fix and regressions via adversarial QA. Test suite passed.
+  * Packaged release v0.2.7 and executed safe dependency updates.
+
 ## v0.2.6
 
 * **Performance:**
