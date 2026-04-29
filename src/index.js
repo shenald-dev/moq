@@ -218,12 +218,12 @@ class MoqServer {
     const dynamicCandidates = this.dynamicRoutes.get(`${method}:${partsLength}`);
     if (dynamicCandidates) {
       const parts = route.split('/');
-      let decodedParts = null;
+      let decoded = false;
 
       for (const candidate of dynamicCandidates) {
-        if (!decodedParts) {
-          decodedParts = parts.map(part => {
-            let decoded = part;
+        if (!decoded) {
+          for (let j = 0; j < parts.length; j++) {
+            const part = parts[j];
             if (part.includes('%')) {
               let depth = 0;
               let currentDecoded = part;
@@ -237,17 +237,17 @@ class MoqServer {
                 }
                 depth++;
               }
-              decoded = currentDecoded;
+              parts[j] = currentDecoded;
             }
-            return decoded;
-          });
+          }
+          decoded = true;
         }
 
         let match = true;
         for (let i = 0; i < candidate.parts.length; i++) {
           if (candidate.parts[i].charCodeAt(0) === 58 && candidate.parts[i].length > 1) continue;
 
-          if (candidate.parts[i] !== decodedParts[i]) {
+          if (candidate.parts[i] !== parts[i]) {
             match = false;
             break;
           }
@@ -280,15 +280,17 @@ class MoqServer {
       if (methodEnd === -1 || !file.endsWith('.json')) continue;
 
       const method = file.slice(0, methodEnd);
-      const fileRoute = file.slice(methodEnd + 1, -'.json'.length);
+      const fileRoute = file.slice(methodEnd + 1, -5);
 
       if (fileRoute.includes(':')) {
         const parts = fileRoute.split('/');
         const key = `${method}:${parts.length}`;
-        if (!this.dynamicRoutes.has(key)) {
-          this.dynamicRoutes.set(key, []);
+        let routes = this.dynamicRoutes.get(key);
+        if (!routes) {
+          routes = [];
+          this.dynamicRoutes.set(key, routes);
         }
-        this.dynamicRoutes.get(key).push({
+        routes.push({
           method,
           file,
           parts
@@ -384,9 +386,9 @@ class MoqServer {
     try {
       proxyReq = transport.request(options, proxyRes => {
         res.status(proxyRes.statusCode);
-        for (const [key, value] of Object.entries(proxyRes.headers)) {
+        for (const key in proxyRes.headers) {
           try {
-            res.setHeader(key, value);
+            res.setHeader(key, proxyRes.headers[key]);
           } catch (err) {
             console.error(`Warning: Failed to set header ${key}: ${err.message}`);
           }

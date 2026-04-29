@@ -134,3 +134,10 @@ URL decoding mechanisms inside path resolution routines must loop until no URL-e
 
 Action:
 Ensure all path resolution logic utilizing `decodeURIComponent` globally applies a capped `while` loop (e.g. depth < 5) to robustly normalize deeply-encoded URI components before proceeding to validations like directory traversal checks (`..`).
+## 2024-11-20 — Avoid intermediate array allocations in hot paths
+
+Learning:
+`Object.entries(headers)` creates an intermediate array of tuples on every proxy response, wasting memory and GC cycles. `parts.map()` creates a new array during every dynamic route path matching. Double `Map` lookups (`has()` then `get()`) create unnecessary operations.
+
+Action:
+Use `for...in` for header iteration, mutate temporary split arrays in-place when url decoding, and cache `.get()` results for Maps instead of checking `.has()`.
