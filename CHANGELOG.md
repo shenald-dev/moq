@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.8
+
+* **Performance:** Replaced redundant `.has()` followed by `.get()` calls on `Map` collections (e.g., `mockDataCache`, `routeCache`) with a single `.get()` call and a truthiness check, halving the number of dictionary searches required during routing and mock data retrieval.
+* **Lifecycle / Maintenance:**
+  * Updated dependencies with safe minor/patch versions (`nodemon`, `chokidar`, `express`, `yargs`).
+  * Validated structural soundness and observability of the codebase post-optimization.
+
 ## v0.2.7
 
 * **Security:**

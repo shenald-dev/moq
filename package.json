@@ -1,6 +1,6 @@
 {
   "name": "moq",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "HTTP mocks at the speed of thought. Zero-config mock server.",
   "main": "src/index.js",
   "bin": {
@@ -25,12 +25,12 @@
   "author": "shenald.dev",
   "license": "MIT",
   "dependencies": {
-    "chokidar": "^3.5.3",
-    "express": "^4.19.2",
-    "yargs": "^17.7.2"
+    "chokidar": "~3.6.0",
+    "express": "~4.22.1",
+    "yargs": "~17.7.2"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0",
+    "nodemon": "~3.1.14",
     "pkg": "^5.8.1"
   },
   "pkg": {
