@@ -71,3 +71,10 @@
 ## v0.1.0
 
 * Initial release.
+
+## v0.2.9
+
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the codebase following the recent stream error propagation fixes for reverse proxy functionality. The additions of explicit `.on('error')` stream destroy calls are correct and necessary.
+  * Executed safe minor and patch dependency bumps (no major bumps were applied to core frameworks).
+  * Maintained test suite passing with 100% success rate.
