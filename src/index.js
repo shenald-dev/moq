@@ -153,15 +153,15 @@ class MoqServer {
   }
 
   resolveMockPath(method, route) {
-    // Normalize route to file pattern
-    // Convert /api/users/123 → /api/users/:id.json if exists, or exact match
-    route = this._trimTrailingSlashes(route); // remove trailing slash
-
     const cacheKey = `${method}:${route}`;
     const cachedRoute = this.routeCache.get(cacheKey);
     if (cachedRoute) {
       return cachedRoute;
     }
+
+    // Normalize route to file pattern
+    // Convert /api/users/123 → /api/users/:id.json if exists, or exact match
+    route = this._trimTrailingSlashes(route); // remove trailing slash
 
     // Prevent OOM from malicious probing
     if (this.routeCache.size > 10000) {

@@ -168,6 +168,22 @@ async function runTests() {
     failed++;
   }
 
+  // Test 8: Trailing slash route caching mapping
+  try {
+    const r1 = await request('GET', '/api/users/', port);
+    const r2 = await request('GET', '/api/users/', port); // Should hit cache without trimming
+    if (r1.status === 200 && r1.body && r1.body.users && r2.status === 200 && r2.body && r2.body.users) {
+      console.log('✅ Trailing slash route caching');
+      passed++;
+    } else {
+      console.log('❌ Trailing slash route caching failed', r1, r2);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Trailing slash route caching error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 
