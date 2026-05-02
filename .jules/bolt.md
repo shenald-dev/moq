@@ -144,3 +144,11 @@ Use `for...in` for header iteration, mutate temporary split arrays in-place when
 2024-04-29 — Map Retrieval Optimization
 Learning: Avoid O(2) double-lookups (`Map.has(key)` followed by `Map.get(key)`) in hot paths like route mapping and payload fetching.
 Action: Assign `Map.get(key)` result directly and check truthiness instead to cut redundant dictionary searches in Express routing flows.
+
+## 2026-05-02 — Route Cache Key Optimization
+
+Learning:
+Performing string manipulation (like trailing slash trimming) on every hot-path request before checking the cache bypasses the true O(1) benefit of memoization.
+
+Action:
+Always perform cache lookups using the raw, unmodified input string first. Only execute string normalizations or allocations when a cache miss occurs to maximize throughput.
