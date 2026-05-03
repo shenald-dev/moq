@@ -152,3 +152,10 @@ Performing string manipulation (like trailing slash trimming) on every hot-path 
 
 Action:
 Always perform cache lookups using the raw, unmodified input string first. Only execute string normalizations or allocations when a cache miss occurs to maximize throughput.
+## 2024-05-19 — Fix Express Middleware Ordering
+
+Learning:
+In Express applications, middleware (like logging or request parsing) and global error handlers must be registered in the correct order relative to route handlers. If route handlers are registered before middleware, the middleware will be completely bypassed for matched routes. Furthermore, the global error handler should always be registered *last* after all routes.
+
+Action:
+Swapped `setupRoutes()` and `setupMiddleware()` calls in the MoqServer constructor. This ensures that the logging middleware executes correctly for all requests, and places the global error handler at the proper end of the chain, adhering to Express architectural standards.

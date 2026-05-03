@@ -53,8 +53,8 @@ class MoqServer {
     this.dynamicRoutes = null;
     this.routeCache = new Map();
     this.mockDataCache = new Map();
-    this.setupRoutes();
     this.setupMiddleware();
+    this.setupRoutes();
 
     if (!this.noReload) {
       this.setupHotReload();
