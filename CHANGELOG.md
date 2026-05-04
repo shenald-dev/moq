@@ -78,3 +78,10 @@
   * Verified structural integrity of the codebase following the recent stream error propagation fixes for reverse proxy functionality. The additions of explicit `.on('error')` stream destroy calls are correct and necessary.
   * Executed safe minor and patch dependency bumps (no major bumps were applied to core frameworks).
   * Maintained test suite passing with 100% success rate.
+
+## v0.2.10
+
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the codebase following the fix for Express middleware and route registration ordering. The global error handler and generic middleware are correctly sequenced.
+  * Executed safe minor and patch dependency bumps (`node-abi`).
+  * Maintained test suite passing with 100% success rate.
