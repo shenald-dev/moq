@@ -297,6 +297,18 @@ class MoqServer {
       }
     }
 
+    for (const routes of this.dynamicRoutes.values()) {
+      routes.sort((a, b) => {
+        for (let i = 0; i < a.parts.length; i++) {
+          const aIsWildcard = a.parts[i].charCodeAt(0) === 58 && a.parts[i].length > 1;
+          const bIsWildcard = b.parts[i].charCodeAt(0) === 58 && b.parts[i].length > 1;
+          if (aIsWildcard && !bIsWildcard) return 1;
+          if (!aIsWildcard && bIsWildcard) return -1;
+        }
+        return 0;
+      });
+    }
+
     return this.mockFilesCache;
   }
 

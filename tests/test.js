@@ -135,6 +135,32 @@ async function runTests() {
     failed++;
   }
 
+  // Test 5.1: dynamic route specificity priority
+  try {
+    const fs = require('fs');
+    if (!fs.existsSync(path.join(mocksDir, 'GET-', 'api', ':type'))) {
+      fs.mkdirSync(path.join(mocksDir, 'GET-', 'api', ':type'), { recursive: true });
+    }
+    fs.writeFileSync(path.join(mocksDir, 'GET-', 'api', ':type', ':id.json'), JSON.stringify({ wildcard: true }));
+    server.reloadMocks();
+
+    const r = await request('GET', '/api/users/123', port);
+    if (r.status === 200 && r.body && r.body.id === 123 && !r.body.wildcard) {
+      console.log('✅ Dynamic Mock specificity matches exact over wildcard');
+      passed++;
+    } else {
+      console.log('❌ Dynamic Mock specificity failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Dynamic Mock specificity error', e);
+    failed++;
+  } finally {
+    const fs = require('fs');
+    fs.rmSync(path.join(mocksDir, 'GET-', 'api', ':type'), { recursive: true, force: true });
+    server.reloadMocks();
+  }
+
   // Test 6: URL decoding and traversal prevention
   try {
     const r = await request('GET', '/api/%252E%252E/secret', port);
