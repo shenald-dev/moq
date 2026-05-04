@@ -159,3 +159,10 @@ In Express applications, middleware (like logging or request parsing) and global
 
 Action:
 Swapped `setupRoutes()` and `setupMiddleware()` calls in the MoqServer constructor. This ensures that the logging middleware executes correctly for all requests, and places the global error handler at the proper end of the chain, adhering to Express architectural standards.
+
+## 2024-05-04 — Dynamic Route Specificity Sorting
+Learning:
+Dynamic route matching historically resolved in arbitrary file-system directory read order (`fs.readdirSync`), causing less-specific wildcard routes (e.g., `/:type/:id.json`) to sometimes overshadow exact segment matches (e.g., `/users/:id.json`).
+
+Action:
+The route loading logic (`getMockFiles`) must sort dynamic route candidates by specificity immediately after building the dynamic map. Non-wildcard path segments are prioritized over wildcard segments to ensure predictable and correct request routing.
