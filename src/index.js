@@ -76,7 +76,7 @@ class MoqServer {
     });
 
     // Catch-all for mocks
-    this.app.all('*', (req, res, next) => {
+    this.app.use((req, res, next) => {
       this.handleRequest(req, res, next).catch(next);
     });
 

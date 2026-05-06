@@ -166,3 +166,11 @@ Dynamic route matching historically resolved in arbitrary file-system directory 
 
 Action:
 The route loading logic (`getMockFiles`) must sort dynamic route candidates by specificity immediately after building the dynamic map. Non-wildcard path segments are prioritized over wildcard segments to ensure predictable and correct request routing.
+
+## 2024-11-21 — Replace app.all('*') with app.use() for Hot Path Routing
+
+Learning:
+In Express, registering a global catch-all route using `app.all('*', ...)` incurs a measurable performance penalty because the framework compiles a regular expression for the wildcard path and explicitly evaluates the HTTP method. For high-throughput mock or proxy servers, this happens on every single incoming request, acting as a bottleneck.
+
+Action:
+Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
