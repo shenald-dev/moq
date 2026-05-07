@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.12
+
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity and expected functionality of the codebase following the optimization to replace `app.all('*')` with `app.use()` for the primary Express routing handler. Tests passed and throughput has increased. No dead code or regressions were observed.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
 ## v0.2.8
 
 * **Performance:** Replaced redundant `.has()` followed by `.get()` calls on `Map` collections (e.g., `mockDataCache`, `routeCache`) with a single `.get()` call and a truthiness check, halving the number of dictionary searches required during routing and mock data retrieval.
