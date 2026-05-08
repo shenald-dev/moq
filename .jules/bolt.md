@@ -174,3 +174,11 @@ In Express, registering a global catch-all route using `app.all('*', ...)` incur
 
 Action:
 Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
+
+## 2024-05-19 — Buffer Parsing Optimization for Mock Files
+
+Learning:
+Express's `res.send()` adds significant overhead when delivering large JSON mock payloads by implicitly applying string-to-buffer conversion and content-type inference. Furthermore, reading files using `fs.promises.readFile(..., 'utf8')` forces string allocation, which is unneeded if we just serve the file over the network. Native Node.js `JSON.parse()` accepts raw Buffers.
+
+Action:
+Read static JSON mock files as raw `Buffer` objects, validate them using `JSON.parse(buffer)`, and serve them directly via native Node.js APIs (`res.setHeader` and `res.end(buffer)`). This bypasses the memory allocation overhead of strings and Express's serialization layer, significantly improving static payload serving performance on hot paths.
