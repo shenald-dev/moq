@@ -174,3 +174,6 @@ In Express, registering a global catch-all route using `app.all('*', ...)` incur
 
 Action:
 Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
+YYYY-MM-DD — Native Payload Serving Bypass
+Learning: Express automatically calculates ETags and incurs string-to-buffer conversion overhead when serving mock payloads via `res.send()`. Using raw Buffers directly from `fs.promises.readFile` and serving with `res.end()` bypasses this overhead entirely while maintaining `JSON.parse` compatibility.
+Action: Prefer native `res.end()` with explicit headers when serving static static content from disk instead of high-level framework wrappers to maximize request throughput.
