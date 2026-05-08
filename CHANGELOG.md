@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.12
+
+* **Performance / Quality Assurance:**
+  * Verified structural integrity of the codebase following the recent route handler optimization that bypasses Express regex compilation using `app.use()`.
+  * Verified the functional correctness of the caching mapping optimization on trailing slashes to prevent O(N) trim operations on hot paths.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
 ## v0.2.8
 
 * **Performance:** Replaced redundant `.has()` followed by `.get()` calls on `Map` collections (e.g., `mockDataCache`, `routeCache`) with a single `.get()` call and a truthiness check, halving the number of dictionary searches required during routing and mock data retrieval.
