@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.12
+
+* **Performance:**
+  * Optimized catch-all routing performance by replacing `app.all('*')` with `app.use()`, bypassing regex evaluation and significantly improving request throughput.
+* **Lifecycle / Maintenance:**
+  * Validated the structural integrity of the optimized routing. Tests pass.
+  * Executed safe minor/patch dependency bumps.
+  * Packaged release v0.2.12.
+
+
 ## v0.2.8
 
 * **Performance:** Replaced redundant `.has()` followed by `.get()` calls on `Map` collections (e.g., `mockDataCache`, `routeCache`) with a single `.get()` call and a truthiness check, halving the number of dictionary searches required during routing and mock data retrieval.
