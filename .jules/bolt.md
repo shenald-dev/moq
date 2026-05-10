@@ -174,3 +174,6 @@ In Express, registering a global catch-all route using `app.all('*', ...)` incur
 
 Action:
 Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
+2024-05-10 — Bypass Express string-to-buffer conversion
+Learning: Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference.
+Action: Always prefer raw buffers and native Node.js response APIs when serving static files or cached file contents in Express to maximize throughput.
