@@ -174,3 +174,10 @@ In Express, registering a global catch-all route using `app.all('*', ...)` incur
 
 Action:
 Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
+## 2024-05-10 — Performance Optimization: Read and serve JSON mocks as raw Buffers
+
+Learning:
+Express's `res.send()` adds significant framework overhead for serving static payloads. It implicitly calculates MD5 ETag hashes dynamically and transforms strings to Buffers over the network stream. Furthermore, `fs.readFile` with 'utf8' incurs parsing allocations.
+
+Action:
+Read mock files natively as buffers via `fs.promises.readFile` (without 'utf8') and serve them explicitly using `res.end()` with manually attached Content-Type and Content-Length headers. Node.js `JSON.parse` natively safely validates Buffers, making this an elegant, safe, and substantial optimization for JSON throughput on hot paths.
