@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.12
+
+* **Performance:** Replaced `app.all('*')` with `app.use()` for the primary routing handler, bypassing regex compilation overhead and increasing baseline request throughput.
+* **Lifecycle / Maintenance:**
+  * Executed safe dependency updates.
+  * Verified structural soundness of the routing optimization.
+
 ## v0.2.8
 
 * **Performance:** Replaced redundant `.has()` followed by `.get()` calls on `Map` collections (e.g., `mockDataCache`, `routeCache`) with a single `.get()` call and a truthiness check, halving the number of dictionary searches required during routing and mock data retrieval.
