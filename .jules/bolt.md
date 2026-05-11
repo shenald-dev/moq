@@ -174,3 +174,11 @@ In Express, registering a global catch-all route using `app.all('*', ...)` incur
 
 Action:
 Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
+
+## 2026-05-11 — Optimize Static Payload Serving in Express
+
+Learning:
+Express's `res.send()` adds significant overhead when serving static payloads (like large JSON responses). This includes dynamic string-to-buffer conversion, content-length calculation, content-type inference, and routing pipeline overhead.
+
+Action:
+To maximize performance and throughput when serving static payloads, read files as raw `Buffer` objects using `fs.promises.readFile` (without encoding) and serve them using native Node.js APIs (`res.setHeader('Content-Type', ...)`, `res.setHeader('Content-Length', Buffer.byteLength(buffer))`, and `res.end(buffer)`). This entirely bypasses Express's internal formatting and transmission overhead. Node's `JSON.parse()` natively supports validating these `Buffer` objects as well.
