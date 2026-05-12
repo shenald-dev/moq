@@ -1,591 +1,179 @@
-We are given three versions: ancestor, base (master), and head (PR branch).
- The conflict is in the section about the routing handler and the static payload serving.
+YYYY-MM-DD — Global Error Handling
+Learning: Express does not automatically handle uncaught synchronous errors cleanly. Malformed URIs caused Express to crash and leak internal HTML stack traces instead of providing standard JSON error responses. Unhandled `new URL()` instantiation errors would completely stop request handling and crash the server.
+Action: Implement standard global Express error handlers as the last middleware step to catch these generic framework errors and serialize them as JSON. Wrap synchronous URL parsing in try/catch blocks within the proxy.
 
- Steps:
- 1. Identify the changes in base and head relative to the ancestor.
+## 2024-05-01 — Process Stability & Memory Growth Limits
 
- Ancestor (common base) for the relevant part (around the routing handler change):
-   ... (truncated middle) ...
-   on for the wildcard path and explicitly evaluates the HTTP method. For high-throughput mock or proxy servers, this happens on every single incoming request, acting as a bottleneck.
+Learning:
+Unbounded caches (`mockDataCache`) in long-running processes pose an OOM risk if malicious requests populate them with large unique keys, or if users load tens of thousands of mock files. Similarly, unhandled `error` events on piped Node.js streams (`proxyRes.pipe(res)`) are a severe process-level stability risk if the upstream target connection drops abruptly.
 
-   Action:
-   Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
+Action:
+Ensure bounded constraints are implemented on all memory data structures (added a 10,000 entry eviction ceiling for `mockDataCache`). In proxy stream patterns, always explicitly listen for the 'error' event on both sides of a pipe to destroy downstream and prevent the `node:events` default handler from crashing the main application thread.
+2024-04-03 — Chokidar Startup Optimization
+Learning: By default, `chokidar.watch` emits `add` events for every existing file when it initializes. In a mock server with many files, this caused O(N) cache clears and console logs during startup.
+Action: Future watchers handling hot-reload patterns should use `ignoreInitial: true` and implement a debounce for batch file updates to avoid rapid repetitive cache invalidation.
 
- Base (master) has:
-   ... (same as ancestor until the routing handler part) ...
-   Action:
-   Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
+2024-05-23 — Prevent crash on proxy response headers
+Learning: Setting dynamic HTTP headers via `res.setHeader()` in Express/Node.js can throw synchronous exceptions (e.g. `ERR_INVALID_CHAR`) if the values are malformed. If this happens inside an asynchronous callback (like `http.request`), it bypasses the Express global error handler and crashes the entire Node process.
+Action: Always wrap `res.setHeader()` calls with a `try-catch` block when dealing with upstream proxy targets.
 
-   ## 2024-05-12 — Optimize static payload serving
+YYYY-MM-DD — Cache Stampede Prevention
+Learning: Caching the result of an asynchronous operation *after* it completes leaves the system vulnerable to a "cache stampede" (thundering herd) under high concurrency, where multiple requests trigger the exact same expensive I/O and parsing operation simultaneously.
+Action: Store a `Promise` of the operation in the cache *before* it resolves. Ensure rejected promises attach a `.catch(() => {})` handler before being stored to avoid unhandled rejection crashes in modern Node.js environments.
 
-   Learning:
-   Express automatically executes heavy memory allocations when reading files with 'utf8' string encoding followed by `res.send()` execution. `res.send` applies dynamic typing inferences, converting variables back into buffers and calculating lengths dynamically. By contrast, node native file-system emits `Buffer` references directly which node core web modules can pipe to the TCP stream efficiently without intervening conversion logic.
+## 2026-04-09 — Optimize Directory Scanning
 
-   Action:
-   Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+Learning:
+The `readDirRecursive` method was using `path.relative` and string splitting (`.split(path.sep).join('/')`) on every file, which is heavily inefficient and generates excess garbage, causing ~36ms overhead on medium directories. By incrementally tracking the relative path during recursion and using simple string concatenation, scanning is significantly faster (~15ms) and allocates far less memory.
 
- Head (PR branch) has:
-   ... (same as ancestor until the routing handler part) ...
-   Action:
-   Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
-   2024-05-10 — Bypass Express string-to-buffer conversion
-   Learning: Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference.
-   Action: Always prefer raw buffers and native Node.js response APIs when serving static files or cached file contents in Express to maximize throughput.
+Action:
+Avoid using `path.relative` in hot paths or tight loops. Instead, compute relative paths incrementally using string concatenation or `path.posix.join` to avoid unnecessary array allocations and platform-specific separator patching.
 
- The conflict is that:
-   - Base added a new section: "## 2024-05-12 — Optimize static payload serving" (with Learning and Action)
-   - Head added a new section: "2024-05-10 — Bypass Express string-to-buffer conversion" (with Learning and Action)
+## 2026-04-16 — Fix directory traversal bypass with decoded routes
 
- According to the rules:
-   - This is a true conflict (both modified the same file from the same ancestor).
-   - We must keep ALL meaningful changes from both branches.
+Learning:
+The directory traversal prevention was previously performed on the raw route. A double URL encoded sequence like `%252E%252E` bypasses a simple `route.includes('..') || route.includes('%2e%2e')` check. When the decoded path isn't used as the single source of truth for validation, the application is vulnerable.
 
- Since the two sections are about different dates and slightly different wordings but same topic (optimizing static payload serving by using buffers and avoiding res.send), we should keep both.
+Action:
+Always fully decode the URI component using `decodeURIComponent` (wrapped in a `try/catch` to gracefully return `null` on malformed URLs) before performing path sequence validation.
 
- However, note that the base section is dated 2024-05-12 and the head section is dated 2024-05-10.
+## 2024-04-17 — Fix Invalid JSON Cache Rejection Resolving to Undefined
 
- We should keep both sections, but we must order them by date? The file is a changelog, so typically we order by date descending (newest first) or ascending? 
- Looking at the existing structure in the file: 
-   The ancestor had a section at the top: "YYYY-MM-DD — Global Error Handling" (without a specific date, but we see in base and head they have a specific date for the error handling: it's wrapped in try/catch for URL parsing, but the date is not shown in the truncated parts? Actually, in the base and head we see:
-        YYYY-MM-DD — Global Error Handling
-        ... 
-        Action: ... Wrap synchronous URL parsing in try/catch blocks within the proxy.
+Learning:
+When caching rejected promises, chaining `.catch(() => {})` directly onto `Promise.reject()` returns a new promise that resolves to `undefined`. This incorrectly stores a successful but empty cache entry instead of a cached rejection.
 
-   Then base has:
-        ## 2024-05-01 — Process Stability & Memory Growth Limits
-        ... 
-        ## 2024-05-12 — Optimize static payload serving
+Action:
+Always create the rejected promise first, attach the `.catch()` handler to it to prevent `unhandledRejection` warnings, but store the original rejected promise instance in the cache so subsequent awaits properly throw the cached error.
 
-   Head has:
-        ## 2024-05-01 — Process Stability & Memory Growth Limits
-        ... 
-        2024-05-10 — Bypass Express string-to-buffer conversion
+2024-05-18 — Preserve Original JSON Errors in Cache Rejections
+Learning: When modifying caching logic to retain promise rejections (e.g., for invalid JSON), it is important not to override the original `SyntaxError` with a generic Error object to bypass deletion checks. Overriding the error degrades Developer Experience (DX) and observability.
+Action: Mutate the original error object (e.g., attach a flag like `e.isInvalidJsonCache = true`) before throwing it. Use this flag for cache retention checks. This preserves the original stack trace and error message while maintaining cache stability.
+## 2026-04-18 — Route matching of URL-encoded paths
+Learning:
+In Express route matching against the filesystem, `req.path` retains URL-encoded characters. Exact file lookups must use the fully decoded path to correctly match filesystem templates containing spaces. For dynamic route matching, the path must be split into segments before decoding to ensure encoded slashes (%2F) do not incorrectly alter the path's segment count.
+Action:
+Implement safe path matching where exact matches utilize `decodeURIComponent` and dynamic matches preserve path boundaries by splitting on un-decoded routes first, before safely decoding and comparing individual components.
 
- So the head section is missing the "##" and the date is written as "2024-05-10 — ..." without the double hash.
+## 2024-05-18 — Route Cache OOM & Performance Improvement
+Learning:
+Moving the route cache key generation and check earlier in `resolveMockPath` optimizes performance. By generating the key and checking the cache before expensive operations like `decodeURIComponent`, regex manipulation, and directory traversal checks, we can serve repeated valid requests significantly faster. However, we MUST NOT cache invalid requests (like malformed URIs or traversal attempts) as null, because malicious fuzzing tools generate unique paths. Caching them would rapidly fill the cache, trigger the eviction policy, and cause cache thrashing for legitimate users.
+Action:
+Always perform caching checks at the very beginning of a lookup function before executing expensive parsing, decoding, or validation. Never cache unvalidated or maliciously formed input keys, as this creates a cache thrashing vulnerability.
+2024-04-19 — Cache dynamic route segment decoding
+Learning: `decodeURIComponent` inside a nested loop for every dynamic route candidate caused a substantial performance bottleneck during path resolution when many dynamic routes exist.
+Action: Hoist segment decoding out of the candidate loop to evaluate exactly once, reducing redundant parsing on the hot path and significantly speeding up worst-case route lookup times.
 
- However, note that in the head version provided, the section is written as:
-        2024-05-10 — Bypass Express string-to-buffer conversion
-        Learning: ...
-        Action: ...
+## 2024-06-25 — Prevent Unhandled Stream Errors on Proxies
 
- While in the base version, the section is:
-        ## 2024-05-12 — Optimize static payload serving
-        Learning:
-        ...
-        Action:
+Learning:
+When utilizing direct stream piping (`req.pipe(proxyReq)` and `proxyRes.pipe(res)`) in Express apps operating as reverse proxies, `error` events from one stream do not automatically propagate and safely destroy the other. Unhandled `error` events on either the client's Request (`req`) or Response (`res`) stream—such as abrupt client disconnects or aborted connections—will propagate to the global process and crash the Node.js application.
 
- We must maintain proper markdown syntax. The existing sections in the file (like "## 2024-05-01 — Process Stability & Memory Growth Limits") use double hash.
+Action:
+Always attach explicit `.on('error', err => target.destroy(err))` listeners on both sides of a proxy pipe in Node.js (i.e., attach an error listener to `req` to destroy `proxyReq`, and to `res` to destroy `proxyRes`).
 
- Therefore, for consistency, we should format the head's added section as a level 2 heading (with two hashes) and then the date.
+## 2026-04-21 — Disable Express Etag and X-Powered-By
 
- But note: the head version provided in the context does not have the double hash. However, that might be because the truncation? Actually, in the head version we see:
+Learning:
+Express calculates `ETag` headers automatically for responses, which involves an expensive hashing operation (using MD5 by default). For large JSON payloads served by mock servers, this creates a significant performance bottleneck (e.g. dropping throughput by over 30%). Additionally, the `X-Powered-By` header leaks the framework type and requires unnecessary processing overhead.
 
-        ... (truncated middle) ...
-        ', ...)` incurs a measurable performance penalty because the framework compiles a regular expression for the wildcard path and explicitly evaluates the HTTP method. For high-throughput mock or proxy servers, this happens on every single incoming request, acting as a bottleneck.
+Action:
+Always disable both `etag` and `x-powered-by` via `app.disable('etag')` and `app.disable('x-powered-by')` when the application does not strictly rely on standard HTTP client-side caching to boost overall throughput and reduce CPU overhead on large payload delivery.
 
-        Action:
-        Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
-        2024-05-10 — Bypass Express string-to-buffer conversion
-        Learning: Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference.
-        Action: Always prefer raw buffers and native Node.js response APIs when serving static files or cached file contents in Express to maximize throughput.
+2026-04-21 — Prevent proxy connection leaks on response close
+Learning:
+When acting as a reverse proxy, if the downstream client response (`res`) abruptly closes (e.g. client disconnects prematurely), the upstream HTTP request (`proxyReq`) and response (`proxyRes`) aren't necessarily torn down immediately by node stream mechanisms, which can leak open keep-alive connections to the upstream target.
+Action:
+In addition to handling stream `error` events, always attach a `.on('close')` event listener to the client response object (`res.on('close')`) that explicitly calls `proxyReq.destroy()` and `proxyRes.destroy()` to aggressively clean up pending requests and prevent socket exhaustion when clients disconnect.
 
- So the head version has the new section without the double hash. But in the base version, the new section has the double hash.
+2024-05-18 — Dynamic Route O(1) Candidate Retrieval
+Learning:
+Previously, dynamic route matching for unmocked endpoints (e.g., proxied requests or 404s) resulted in an O(N) traversal across the entire `dynamicRoutes` array on every request, creating a performance bottleneck on hot paths since we deliberately do not cache `null` lookup results to prevent cache thrashing.
+Action:
+Group `dynamicRoutes` into a `Map` structured by `${method}:${parts.length}`. This optimization enables O(1) retrieval of applicable route candidates, bypassing the array allocation and iterative evaluation loop entirely for requests that do not match the expected path segment count.
 
- Since the file already uses double hash for sections (as seen in "## 2024-05-01 — Process Stability & Memory Growth Limits"), we should convert the head's section to use double hash as well.
+## 2024-05-18 — Dynamic Route Matching Optimization
 
- However, note the resolution rules: we must keep all meaningful changes. The meaningful change is the content of the section, not the exact markdown syntax for the heading? But we must maintain proper markdown.
+Learning:
+Using a Map to group dynamic routes by HTTP method and route part count replaces O(N) array iteration with an O(1) retrieval for candidate matches, avoiding CPU overhead during fallback routing.
 
- Let's look at the git diff provided:
+Action:
+Prefer indexed collections like Maps and Sets over array scans on critical paths with many lookups to ensure performance scalability.
 
-   @@ -174,3 +174,6 @@ In Express, registering a global catch-all route using `app.all('*', ...)` incur
-   
-   Action:
-   Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
-   +2024-05-10 — Bypass Express string-to-buffer conversion
-   +Learning: Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference.
-   +Action: Always prefer raw buffers and native Node.js response APIs when serving static files or cached file contents in Express to maximize throughput.
+2024-06-26 — Prevent Synchronous Crashes on Proxy Client Request Initialization
+Learning:
+When utilizing `http.request` or `https.request` in Node.js to proxy requests, constructing the client request (e.g., `transport.request(options, ...)`) can throw synchronous exceptions (such as `ERR_INVALID_CHAR` or `ERR_INVALID_HTTP_TOKEN`) if the incoming request contains invalid or malformed header characters. Because this exception is thrown synchronously during initialization, it bypasses standard asynchronous error event listeners and the Express global error handler, crashing the entire Node process.
+Action:
+Always wrap the instantiation of outgoing `transport.request` calls in a `try-catch` block to safely catch synchronous initialization errors and return an appropriate gateway error response, ensuring process stability against malformed upstream proxy requests.
 
- This diff shows that the head added three lines starting with a plus, and the first line is "2024-05-10 — Bypass Express string-to-buffer conversion" (without double hash).
+## 2024-04-25 — Optimize decodeURIComponent Hot Path
+Learning: Calling `decodeURIComponent` (and initializing its associated `try...catch` block) incurs unnecessary overhead for standard strings. By definition, URL encoding relies on the `%` character. Strings lacking a `%` will remain unmodified.
+Action: Always wrap `decodeURIComponent` inside an `if (string.includes('%'))` check on hot paths (like routing) to bypass expensive native execution and V8 deoptimizations when decoding is not required.
+2024-04-26 — Optimize hot path string operations
+Learning: Using regex like `replace(/\/+$/, '')`, `startsWith`, and array allocations (like splitting an unencoded URL path) inside hot paths like Express middleware (`resolveMockPath` and `proxyRequest`) adds measurable overhead per request.
+Action: Replaced regex and simple prefix checks with fast manual string traversal using `charCodeAt()` and `slice()` to reduce memory allocation and string parsing time. Always prefer `charCodeAt(0)` over `startsWith(char)` for single characters on critical paths.
 
- But in the base version, the added section (from the base diff we don't have, but we have the base version) is:
+## 2026-04-26 — Optimize Proxy URL Parsing
 
-        ## 2024-05-12 — Optimize static payload serving
+Learning:
+When handling proxied requests, allocating and executing `new URL(targetUrl)` inside the `proxyRequest` method on every single incoming proxy request creates an expensive O(1) allocation/parsing cost that heavily degrades reverse proxy throughput.
 
-        Learning:
-        Express automatically executes heavy memory allocations when reading files with 'utf8' string encoding followed by `res.send()` execution. `res.send` applies dynamic typing inferences, converting variables back into buffers and calculating lengths dynamically. By contrast, node native file-system emits `Buffer` references directly which node core web modules can pipe to the TCP stream efficiently without intervening conversion logic.
+Action:
+Pre-parse the `proxyTarget` in the `MoqServer` constructor just once when proxying is enabled, and store the resulting hostname, port, and base path. Use fast string concatenation on the hot path in `proxyRequest` to build the target path rather than re-parsing the entire URL.
 
-        Action:
-        Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+## 2024-04-27 — Optimize Dynamic Route String Allocation
 
- So the base version has:
-   - A heading: "## 2024-05-12 — Optimize static payload serving"
-   - Then a blank line? (Actually, in the base version we see: after the action of the routing handler, there is a blank line, then the heading, then a blank line, then "Learning:", etc.)
+Learning:
+Calling `String.prototype.split('/')` unconditionally on the hot path for dynamic route resolution creates unnecessary O(N) array allocations per un-cached miss. This negatively impacts throughput when handling unrecognized paths or fallback routing.
 
- However, note that the base version provided in the context has:
+Action:
+Manually count the number of expected string segments by traversing the string (`charCodeAt(47)`) and conditionally execute `split('/')` only if dynamic route candidates actually exist for that determined segment length.
+## 2024-04-28 — Path Validation Refactoring for Deep Directory Traversal
 
-        ... (truncated middle) ...
-        Action:
-        Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
+Learning:
+URL decoding mechanisms inside path resolution routines must loop until no URL-encoded characters remain, capped by a safe depth limit, to avoid deep or multiple-encoded bypasses (e.g. `/%2525252E%2525252E/`). Hardcoding decoding passes is insufficient against malicious encoding schemes.
 
-        ## 2024-05-12 — Optimize static payload serving
+Action:
+Ensure all path resolution logic utilizing `decodeURIComponent` globally applies a capped `while` loop (e.g. depth < 5) to robustly normalize deeply-encoded URI components before proceeding to validations like directory traversal checks (`..`).
+## 2024-11-20 — Avoid intermediate array allocations in hot paths
 
-        Learning:
-        Express automatically executes heavy memory allocations when reading files with 'utf8' string encoding followed by `res.send()` execution. `res.send` applies dynamic typing inferences, converting variables back into buffers and calculating lengths dynamically. By contrast, node native file-system emits `Buffer` references directly which node core web modules can pipe to the TCP stream efficiently without intervening conversion logic.
+Learning:
+`Object.entries(headers)` creates an intermediate array of tuples on every proxy response, wasting memory and GC cycles. `parts.map()` creates a new array during every dynamic route path matching. Double `Map` lookups (`has()` then `get()`) create unnecessary operations.
 
-        Action:
-        Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+Action:
+Use `for...in` for header iteration, mutate temporary split arrays in-place when url decoding, and cache `.get()` results for Maps instead of checking `.has()`.
+2024-04-29 — Map Retrieval Optimization
+Learning: Avoid O(2) double-lookups (`Map.has(key)` followed by `Map.get(key)`) in hot paths like route mapping and payload fetching.
+Action: Assign `Map.get(key)` result directly and check truthiness instead to cut redundant dictionary searches in Express routing flows.
 
- And the head version has:
+## 2026-05-02 — Route Cache Key Optimization
 
-        ... (truncated middle) ...
-        Action:
-        Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
-        2024-05-10 — Bypass Express string-to-buffer conversion
-        Learning: Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference.
-        Action: Always prefer raw buffers and native Node.js response APIs when serving static files or cached file contents in Express to maximize throughput.
+Learning:
+Performing string manipulation (like trailing slash trimming) on every hot-path request before checking the cache bypasses the true O(1) benefit of memoization.
 
- Now, to resolve:
+Action:
+Always perform cache lookups using the raw, unmodified input string first. Only execute string normalizations or allocations when a cache miss occurs to maximize throughput.
+## 2024-05-19 — Fix Express Middleware Ordering
 
-   We want to keep both sections. We should order them by date? The base section is 2024-05-12 and the head section is 2024-05-10. 
-   Since 2024-05-12 is newer than 2024-05-10, if we are ordering by date descending (newest first) then the base section (2024-05-12) should come before the head section (2024-05-10).
+Learning:
+In Express applications, middleware (like logging or request parsing) and global error handlers must be registered in the correct order relative to route handlers. If route handlers are registered before middleware, the middleware will be completely bypassed for matched routes. Furthermore, the global error handler should always be registered *last* after all routes.
 
-   However, note that the existing section in the file (from ancestor) for the routing handler change is immediately followed by the new sections.
+Action:
+Swapped `setupRoutes()` and `setupMiddleware()` calls in the MoqServer constructor. This ensures that the logging middleware executes correctly for all requests, and places the global error handler at the proper end of the chain, adhering to Express architectural standards.
 
-   In the base version, after the routing handler action, we have:
-        (blank line)
-        ## 2024-05-12 — Optimize static payload serving
-        (blank line)
-        Learning:
-        ... 
+## 2024-05-04 — Dynamic Route Specificity Sorting
+Learning:
+Dynamic route matching historically resolved in arbitrary file-system directory read order (`fs.readdirSync`), causing less-specific wildcard routes (e.g., `/:type/:id.json`) to sometimes overshadow exact segment matches (e.g., `/users/:id.json`).
 
-   In the head version, after the routing handler action, we have:
-        2024-05-10 — Bypass Express string-to-buffer conversion
-        Learning: ...
-        Action: ...
+Action:
+The route loading logic (`getMockFiles`) must sort dynamic route candidates by specificity immediately after building the dynamic map. Non-wildcard path segments are prioritized over wildcard segments to ensure predictable and correct request routing.
 
-   We are going to combine:
+## 2024-11-21 — Replace app.all('*') with app.use() for Hot Path Routing
 
-        [routing handler action text]
+Learning:
+In Express, registering a global catch-all route using `app.all('*', ...)` incurs a measurable performance penalty because the framework compiles a regular expression for the wildcard path and explicitly evaluates the HTTP method. For high-throughput mock or proxy servers, this happens on every single incoming request, acting as a bottleneck.
 
-        ## 2024-05-12 — Optimize static payload serving
-
-        Learning:
-        Express automatically executes heavy memory allocations when reading files with 'utf8' string encoding followed by `res.send()` execution. `res.send` applies dynamic typing inferences, converting variables back into buffers and calculating lengths dynamically. By contrast, node native file-system emits `Buffer` references directly which node core web modules can pipe to the TCP stream efficiently without intervening conversion logic.
-
-        Action:
-        Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
-
-        ## 2024-05-10 — Bypass Express string-to-buffer conversion
-
-        Learning: Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference.
-        Action: Always prefer raw buffers and native Node.js response APIs when serving static files or cached file contents in Express to maximize throughput.
-
-   But wait: the head section in the head version did not have a blank line after the heading? Actually, in the head version we see no blank line after the heading and before "Learning:". However, in the base version we see a blank line after the heading and before "Learning:".
-
-   To be consistent with the existing style in the file (which uses blank lines after headings and before the content, as seen in the "## 2024-05-01 — Process Stability & Memory Growth Limits" section), we should add blank lines.
-
-   However, note that the base version for the 2024-05-12 section has:
-        ## 2024-05-12 — Optimize static payload serving
-
-        Learning:
-        ...
-
-   So we'll follow that.
-
-   Also, note that the head section in the head version has the learning and action on the same line? Actually, it's:
-        Learning: ... 
-        Action: ...
-
-   But in the base version, the learning and action are on separate lines with the label on its own line.
-
-   We should keep the style of the base version for consistency? Or the head version? 
-
-   Since we are keeping both, and the base version's style is already present in the file (for the 2024-05-01 section and the 2024-05-12 section), we should use the base version's style for both.
-
-   Therefore, for the head's section we will format it as:
-
-        ## 2024-05-10 — Bypass Express string-to-buffer conversion
-
-        Learning: Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference.
-        Action: Always prefer raw buffers and native Node.js response APIs when serving static files or cached file contents in Express to maximize throughput.
-
-   But note: the base version's learning section for the 2024-05-12 section has the learning text on the next line after "Learning:" (with a colon and then a newline and then the text indented? Actually, no: in the base version we see:
-
-        Learning:
-        Express automatically executes ...
-
-   So the label "Learning:" is on a line by itself, and then the text is on the next line (without extra indentation? Actually, in the markdown it's just the next line).
-
-   However, in the head version provided, the learning and action are written as:
-
-        Learning: ... 
-        Action: ...
-
-   So to be consistent with the base version's existing sections (like the 2024-05-01 section and the 2024-05-12 section) we should change the head's section to have:
-
-        Learning:
-        [text]
-
-        Action:
-        [text]
-
-   But wait, the base version's 2024-05-01 section is truncated, so we don't see the exact format. However, the 2024-05-12 section in base is:
-
-        Learning:
-        Express automatically executes heavy memory allocations when reading files with 'utf8' string encoding followed by `res.send()` execution. `res.send` applies dynamic typing inferences, converting variables back into buffers and calculating lengths dynamically. By contrast, node native file-system emits `Buffer` references directly which node core web modules can pipe to the TCP stream efficiently without intervening conversion logic.
-
-        Action:
-        Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
-
-   So we'll use that format.
-
-   However, note that the head version's content for the learning and action is a bit different: it's two sentences in the learning and one in the action? But we are to keep the content.
-
-   Let's write the head's section in the base's style:
-
-        ## 2024-05-10 — Bypass Express string-to-buffer conversion
-
-        Learning:
-        Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference.
-
-        Action:
-        Always prefer raw buffers and native Node.js response APIs when serving static files or cached file contents in Express to maximize throughput.
-
-   But note: the base version's 2024-05-12 section has a blank line between the learning text and the "Action:" line? Actually, we see:
-
-        Learning:
-        [text]
-
-        Action:
-        [text]
-
-   So there is a blank line between the learning text and the action heading.
-
-   However, in the base version provided, we see:
-
-        Learning:
-        Express automatically executes heavy memory allocations when reading files with 'utf8' string encoding followed by `res.send()` execution. `res.send` applies dynamic typing inferences, converting variables back into buffers and calculating lengths dynamically. By contrast, node native file-system emits `Buffer` references directly which node core web modules can pipe to the TCP stream efficiently without intervening conversion logic.
-
-        Action:
-        Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
-
-   So yes, there is a blank line.
-
-   Now, what about the order? We have two sections: 2024-05-12 and 2024-05-10. Since 2024-05-12 is later, if we are doing descending order (newest first) then 2024-05-12 comes first.
-
-   But note: the existing section in the file (the 2024-05-01 section) is before the routing handler change? Actually, no: the context shows:
-
-        Base (master):
-          ... 
-          ## 2024-05-01 — Process Stability & Memory Growth Limits
-          ... 
-          (then the routing handler change section)
-          ## 2024-05-12 — Optimize static payload serving
-
-   So the 2024-05-01 section is above the routing handler change, and the 2024-05-12 section is below.
-
-   The head version has:
-
-          ... 
-          ## 2024-05-01 — Process Stability & Memory Growth Limits
-          ... 
-          (then the routing handler change section)
-          2024-05-10 — Bypass Express string-to-buffer conversion
-
-   So both new sections are placed after the routing handler change section.
-
-   Therefore, we will put both new sections after the routing handler change section, and we will order them by date descending (so 2024-05-12 first, then 2024-05-10).
-
-   However, note that the base version already has the 2024-05-12 section and the head version has the 2024-05-10 section. We are merging both.
-
-   Steps for the resolved file:
-
-     1. Keep everything from the ancestor up to the routing handler action (which is the same in base and head? Actually, the ancestor and base and head all have the same text up to the routing handler action? Let me check:
-
-        Ancestor: 
-          ... (truncated middle) ...
-          on for the wildcard path and explicitly evaluates the HTTP method. For high-throughput mock or proxy servers, this happens on every single incoming request, acting as a bottleneck.
-
-          Action:
-          Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
-
-        Base:
-          ... (same as ancestor until the routing handler action) ...
-          Action:
-          Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
-
-        Head:
-          ... (same as ancestor until the routing handler action) ...
-          Action:
-          Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
-
-        So the routing handler action text is identical in all three? Then we can keep that text.
-
-     2. After that, we add both new sections (formatted as level 2 headings with blank lines and then the learning and action in the base style).
-
-   But note: the base version already has the 2024-05-12 section and the head version has the 2024-05-10 section. We are adding the head's section as a new section.
-
-   However, we must be cautious: the base version's 2024-05-12 section is already present, and we are adding the head's section. We are not removing the base's section.
-
-   Therefore, the resolved section after the routing handler action will be:
-
-        [the routing handler action text]
-
-        ## 2024-05-12 — Optimize static payload serving
-
-        Learning:
-        Express automatically executes heavy memory allocations when reading files with 'utf8' string encoding followed by `res.send()` execution. `res.send` applies dynamic typing inferences, converting variables back into buffers and calculating lengths dynamically. By contrast, node native file-system emits `Buffer` references directly which node core web modules can pipe to the TCP stream efficiently without intervening conversion logic.
-
-        Action:
-        Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
-
-        ## 2024-05-10 — Bypass Express string-to-buffer conversion
-
-        Learning:
-        Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference.
-
-        Action:
-        Always prefer raw buffers and native Node.js response APIs when serving static files or cached file contents in Express to maximize throughput.
-
-   However, note that the base version's 2024-05-12 section in the context had a blank line after the heading and before "Learning:", and we are replicating that.
-
-   But wait: the base version's 2024-05-12 section in the context actually had:
-
-        ## 2024-05-12 — Optimize static payload serving
-
-        Learning:
-        ...
-
-   So we have two blank lines? Actually, the heading line, then a blank line, then "Learning:", then the text.
-
-   In our resolved version, we have:
-
-        [routing handler action text]   (which ends with a line)
-        (then a blank line? Actually, in the base version we see after the action text there is a blank line and then the heading)
-
-   Let me check the base version context:
-
-        ... 
-        Action:
-        Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
-
-        ## 2024-05-12 — Optimize static payload serving
-
-        Learning:
-        ...
-
-   So after the action text, there is a blank line, then the heading, then a blank line, then "Learning:".
-
-   We want to replicate that.
-
-   Therefore, after the routing handler action text, we put a blank line, then the heading for 2024-05-12, then a blank line, then "Learning:", etc.
-
-   Then after the 2024-05-12 section, we put a blank line? Actually, in the base version, after the 2024-05-12 section there is nothing shown (it's the end of the provided snippet). But we are adding another section.
-
-   We should put a blank line between the two sections? 
-
-   Looking at the existing sections in the file: 
-        The "## 2024-05-01 — Process Stability & Memory Growth Limits" section is followed by the routing handler change section? Actually, no: the 2024-05-01 section is above the routing handler change.
-
-   But we don't have an example of two consecutive sections after the routing handler change.
-
-   However, to be safe and consistent with markdown, we can put a blank line between the two sections.
-
-   So:
-
-        [routing handler action text]
-
-        (blank line)
-        ## 2024-05-12 — Optimize static payload serving
-
-        (blank line)
-        Learning:
-        [text]
-
-        (blank line)
-        Action:
-        [text]
-
-        (blank line)
-        ## 2024-05-10 — Bypass Express string-to-buffer conversion
-
-        (blank line)
-        Learning:
-        [text]
-
-        (blank line)
-        Action:
-        [text]
-
-   But note: the base version's 2024-05-12 section already has the blank lines as described. We are just adding another section after it.
-
-   Alternatively, we can note that the base version's 2024-05-12 section ends with the action text and then the file continues (but we don't see what's after). Since we are adding a new section, we should separate it by a blank line.
-
-   However, the problem says: output the complete resolved file content. We are only given snippets, but we know that the rest of the file is the same in all three? Actually, the context says that the middle section is truncated and the same in all three? 
-
-   We are only to resolve the conflict in the given section. The rest of the file is unchanged.
-
-   Therefore, we will output:
-
-        ... (everything from the start of the file up to and including the routing handler action text, exactly as in the ancestor/base/head) ...
-
-        Then a blank line.
-        Then the 2024-05-12 section (formatted as base has it).
-        Then a blank line.
-        Then the 2024-05-10 section (formatted in the base style).
-
-   But wait: the base version already has the 2024-05-12 section. So if we output the base version up to the end of the 2024-05-12 section and then add the 2024-05-10 section, that would be duplicating the 2024-05-12 section? 
-
-   Actually, no: we are not taking the base version and then adding the head's section. We are doing a merge.
-
-   The base version has:
-        [common part up to routing handler action]
-        [routing handler action text]
-        [blank line]
-        ## 2024-05-12 — Optimize static payload serving
-        [blank line]
-        Learning:
-        [text]
-        [blank line]
-        Action:
-        [text]
-
-   The head version has:
-        [common part up to routing handler action]
-        [routing handler action text]
-        2024-05-10 — Bypass Express string-to-buffer conversion
-        Learning: [text]
-        Action: [text]
-
-   The ancestor has:
-        [common part up to routing handler action]
-        [routing handler action text]
-        [and then nothing else in the snippet? Actually, the ancestor snippet ends after the routing handler action text?]
-
-   But note: the ancestor snippet provided in the context ends with:
-
-        Action:
-        Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
-
-   So the ancestor has nothing after the routing handler action text.
-
-   Therefore, the base version added the 2024-05-12 section, and the head version added the 2024-05-10 section.
-
-   In the merge, we want to keep both additions.
-
-   So the resolved version should have:
-
-        [common part up to routing handler action]
-        [routing handler action text]
-        [then the base's addition: the 2024-05-12 section]
-        [then the head's addition: the 2024-05-10 section]
-
-   And we format the head's addition to match the base's section style.
-
-   Therefore, after the routing handler action text, we put:
-
-        (blank line)   [to separate from the routing handler action text, as the base did]
-        ## 2024-05-12 — Optimize static payload serving
-
-        (blank line)
-        Learning:
-        [base's learning text for 2024-05-12]
-
-        (blank line)
-        Action:
-        [base's action text for 2024-05-12]
-
-        (blank line)   [to separate the two sections]
-        ## 2024-05-10 — Bypass Express string-to-buffer conversion
-
-        (blank line)
-        Learning:
-        [head's learning text for 2024-05-10]
-
-        (blank line)
-        Action:
-        [head's action text for 2024-05-10]
-
-   However, note that the base version's 2024-05-12 section already includes the blank lines as described. So if we take the base version's 2024-05-12 section exactly as it is (which includes the blank lines after the heading and before the learning, and between learning and action) and then we add a blank line and then the head's section (formatted similarly), that should be correct.
-
-   But wait: the base version's 2024-05-12 section in the context ends with the action text and then nothing? Actually, we don't see what comes after in the base version. But we are adding more content, so we need to separate.
-
-   Alternatively, we can think of the base version as having:
-
-        ... [up to routing handler action] 
-        [routing handler action text]
-        [blank line]
-        ## 2024-05-12 — Optimize static payload serving
-        [blank line]
-        Learning:
-        [text]
-        [blank line]
-        Action:
-        [text]
-
-   And the head version as having:
-
-        ... [up to routing handler action] 
-        [routing handler action text]
-        2024-05-10 — Bypass Express string-to-buffer conversion
-        Learning: [text]
-        Action: [text]
-
-   So to merge, we take the base version's content after the routing handler action (which is the 2024-05-12 section) and then we append the head's section (but formatted to match the base's section style) after a blank line.
-
-   Therefore, the resolved file will have:
-
-        ... [common part up to routing handler action] 
-        [routing handler action text]
-        [blank line]
-        ## 2024-05-12 — Optimize static payload serving
-        [blank line]
-        Learning:
-        [base's learning text for 2024-05-12]
-        [blank line]
-        Action:
-        [base's action text for 2024-0-12]
-        [blank line]
-        ## 2024-05-10 — Bypass Express string-to-buffer conversion
-        [blank line]
-        Learning:
-        [head's learning text for 2024-05-10]
-        [blank line]
-        Action:
-        [head's action text for 2024-05-10]
-
-   Now, let's write the exact text for each part.
-
-   From the base version's 2024-05-12 section:
-
-        Learning:
-        Express automatically executes heavy memory allocations when reading files with 'utf8' string encoding followed by `res.send()` execution. `res.send` applies dynamic typing inferences, converting variables back into buffers and calculating lengths dynamically. By contrast, node native file-system emits `Buffer` references directly which node core web modules can pipe to the TCP stream efficiently without intervening conversion logic.
-
-        Action:
-        Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
-
-   From the head version's section (which we are going to reformat):
-
-        Learning: Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference.
-        Action: Always prefer raw buffers and native Node.js response APIs when serving static files or cached file contents in Express to maximize throughput.
-
-   We reformat the head's section to:
-
-        Learning:
-        Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference.
-
-        Action:
-        Always prefer raw buffers and native Node.js response APIs when serving static files or cached file contents in Express to maximize throughput.
-
-   Note: We added a blank line between the learning text and the "Action:" line, and we put each label on its own line.
-
-   Now, we must be cautious: the base version's 2024-05-12 section has a period at the end of the learning text? Actually, it ends with a period? 
-        "... without intervening conversion logic." -> yes, there is a period.
-
-   The head's learning text: 
-        "... content-type inference." -> we should keep the period? Actually, the head version provided says: 
-        "Learning: Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference."
-
-        There is no period at the end? But in the base version's style, we are putting the text as a sentence. We should keep the exact words.
-
-   However, the head version provided in the context does not have
+Action:
+Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
+2024-05-10 — Bypass Express string-to-buffer conversion
+Learning: Reading static payloads as raw Buffer objects and bypassing Express's res.send() by manually setting headers and using res.end() eliminates significant CPU overhead associated with string-to-buffer conversion and content-type inference.
+Action: Always prefer raw buffers and native Node.js response APIs when serving static files or cached file contents in Express to maximize throughput.
