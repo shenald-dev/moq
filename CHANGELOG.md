@@ -7,6 +7,10 @@
   * Verified the functional correctness of the caching mapping optimization on trailing slashes to prevent O(N) trim operations on hot paths.
   * Executed safe minor and patch dependency bumps.
   * Maintained test suite passing with 100% success rate.
+* **Performance:** Replaced `app.all('*')` with `app.use()` for the primary routing handler, bypassing regex compilation overhead and increasing baseline request throughput.
+* **Lifecycle / Maintenance:**
+  * Executed safe dependency updates.
+  * Verified structural soundness of the routing optimization.
 
 ## v0.2.8
 
