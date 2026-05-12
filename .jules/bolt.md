@@ -175,6 +175,7 @@ In Express, registering a global catch-all route using `app.all('*', ...)` incur
 Action:
 Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
 
+
 ## 2024-05-19 — Buffer Parsing Optimization for Mock Files
 
 Learning:
