@@ -107,7 +107,7 @@ class MoqServer {
       try {
         let contentPromise = this.mockDataCache.get(mockFile);
         if (!contentPromise) {
-          contentPromise = fs.promises.readFile(mockFile, 'utf8').then(content => {
+          contentPromise = fs.promises.readFile(mockFile).then(content => {
             try {
               JSON.parse(content); // Validate JSON
               return content;
@@ -139,7 +139,10 @@ class MoqServer {
         }
 
         // Optionally read meta file for status/headers (future)
-        res.status(200).type('json').send(content);
+        res.status(200);
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.setHeader('Content-Length', content.length);
+        res.end(content);
         console.log(`✅ Served mock: ${req.method} ${req.path} → ${path.basename(mockFile)}`);
       } catch (err) {
         console.error(`Mock error: ${err.message}`);
@@ -333,7 +336,7 @@ class MoqServer {
       try {
         let contentPromise = this.mockDataCache.get(fallback);
         if (!contentPromise) {
-          contentPromise = fs.promises.readFile(fallback, 'utf8').then(content => {
+          contentPromise = fs.promises.readFile(fallback).then(content => {
             try {
               JSON.parse(content); // Validate JSON
               return content;
@@ -361,7 +364,10 @@ class MoqServer {
           throw e;
         }
 
-        res.status(404).type('json').send(content);
+        res.status(404);
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.setHeader('Content-Length', content.length);
+        res.end(content);
       } catch {
         res.status(404).json({ error: 'Not found' });
       }
