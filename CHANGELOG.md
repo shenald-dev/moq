@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.12
+
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity and performance improvements following the replacement of `app.all('*')` with `app.use()` for the global mock resolution middleware. This change bypassed regex compilation overhead successfully without altering functionality.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
 ## v0.2.8
 
 * **Performance:** Replaced redundant `.has()` followed by `.get()` calls on `Map` collections (e.g., `mockDataCache`, `routeCache`) with a single `.get()` call and a truthiness check, halving the number of dictionary searches required during routing and mock data retrieval.
