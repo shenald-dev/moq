@@ -175,6 +175,13 @@ In Express, registering a global catch-all route using `app.all('*', ...)` incur
 Action:
 Replaced `app.all('*', ...)` with `app.use((req, res, next) => ...)` for the primary routing handler. `app.use` relies on simple prefix string matching (defaulting to `/`), bypassing regex compilation and method checks entirely, which significantly increases baseline request throughput and reduces CPU overhead.
 
+## 2024-05-12 — Optimize static payload serving
+
+Learning:
+Express automatically executes heavy memory allocations when reading files with 'utf8' string encoding followed by `res.send()` execution. `res.send` applies dynamic typing inferences, converting variables back into buffers and calculating lengths dynamically. By contrast, node native file-system emits `Buffer` references directly which node core web modules can pipe to the TCP stream efficiently without intervening conversion logic.
+
+Action:
+Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
 ## 2024-05-11 — Optimize Static Express Payload Serving
 
 Learning:
