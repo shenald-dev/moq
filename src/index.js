@@ -140,6 +140,7 @@ class MoqServer {
 
         // Optionally read meta file for status/headers (future)
         res.status(200);
+        res.setHeader('Content-Length', content.length);
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
         res.end(content);
         console.log(`✅ Served mock: ${req.method} ${req.path} → ${path.basename(mockFile)}`);
@@ -364,6 +365,7 @@ class MoqServer {
         }
 
         res.status(404);
+        res.setHeader('Content-Length', content.length);
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
         res.end(content);
       } catch {
