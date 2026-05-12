@@ -87,3 +87,8 @@ Observation / Pruned:
 The previous agent correctly fixed an issue with dynamic route resolution specificity order. The sorting algorithm ensures exact string segment matches are properly prioritized over wildcard segments (`:`). No dead code or unused files needed pruning.
 Alignment / Deferred:
 Changes verified successfully. Safe package upgrades completed. Tagged and released v0.2.11. No architecture drifts or unmanageable complexities were identified.
+2026-05-06 — Assessment & Lifecycle
+Observation / Pruned:
+The previous agent successfully implemented `app.use()` instead of `app.all('*')` for the primary global mock handler. This accurately bypasses Express's regex evaluation per request for catch-alls, significantly increasing request throughput. No unused exports or orphaned files were introduced. Tested and verified the global catch-all routing behaves properly across methods and dynamic segments. No dead code required pruning.
+Alignment / Deferred:
+Safe dependency upgrades completed (`node-abi`). Checked for major deprecations and found none. Tagged and released v0.2.12.
