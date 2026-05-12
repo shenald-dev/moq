@@ -2,13 +2,10 @@
 
 ## v0.2.12
 
-* **Performance:**
-  * Optimized catch-all routing performance by replacing `app.all('*')` with `app.use()`, bypassing regex evaluation and significantly improving request throughput.
+* **Performance:** Replaced `app.all('*')` with `app.use()` for the primary routing handler, bypassing regex compilation overhead and increasing baseline request throughput.
 * **Lifecycle / Maintenance:**
-  * Validated the structural integrity of the optimized routing. Tests pass.
-  * Executed safe minor/patch dependency bumps.
-  * Packaged release v0.2.12.
-
+  * Executed safe dependency updates.
+  * Verified structural soundness of the routing optimization.
 
 ## v0.2.8
 
