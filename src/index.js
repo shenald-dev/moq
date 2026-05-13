@@ -15,7 +15,7 @@ class MoqServer {
   _trimTrailingSlashes(str) {
     if (str.length === 0) return str;
     let j = str.length - 1;
-    while (j >= 0 && str.charCodeAt(j) === 47) j--;
+    while (j > 0 && str.charCodeAt(j) === 47) j--;
     return j === str.length - 1 ? str : str.slice(0, j + 1);
   }
 
