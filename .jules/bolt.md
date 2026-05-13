@@ -182,3 +182,11 @@ Express automatically executes heavy memory allocations when reading files with 
 
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+
+## 2024-05-18 — Root Path Trimming Fix
+
+Learning:
+The custom string trimming function `_trimTrailingSlashes` reduced the root path (`/`) to an empty string (`""`) because the loop condition `j >= 0` evaluated and decremented past the first character. This causes bugs when resolving the root path, breaking proxy functionality where `this.proxyBasePath` incorrectly becomes empty instead of retaining the root `/` character.
+
+Action:
+Ensure loop conditions in custom string manipulation algorithms account for retaining at least one character when necessary. In `_trimTrailingSlashes`, changing the condition from `j >= 0` to `j > 0` ensures the root path `/` is returned correctly without trimming it entirely.
