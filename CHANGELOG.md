@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.13
+
+* **Performance:**
+  * Served static payload requests as raw `Buffer` objects via native Node.js APIs (`res.end`) bypassing Express overhead, reducing string-to-buffer conversion time and boosting throughput.
+* **Lifecycle / Maintenance:**
+  * Verified structural soundness of optimization.
+  * Executed safe minor and patch dependency updates.
+
 ## v0.2.12
 
 * **Performance:** Replaced `app.all('*')` with `app.use()` for the primary routing handler, bypassing regex compilation overhead and increasing baseline request throughput.
