@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.13
+
+* **Performance:** Optimized static payload delivery by serving raw file `Buffer` objects via native Node.js APIs (e.g. `res.end()`), bypassing the `Express` framework's `res.send()` overhead such as dynamic string-to-buffer conversion and inference.
+* **Lifecycle / Maintenance:**
+  * Executed safe dependency updates (Express bumped to 4.22.2).
+  * Removed orphaned standalone binaries to ensure clean repository hygiene.
+  * Verified structural soundness of the buffering optimization via test suite execution.
+
 ## v0.2.12
 
 * **Performance:** Replaced `app.all('*')` with `app.use()` for the primary routing handler, bypassing regex compilation overhead and increasing baseline request throughput.

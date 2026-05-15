@@ -112,7 +112,7 @@ No YAML complexity. No GUI clicks. Just files + one command.
 ## 🛠️ Tech Stack
 
 - **Node.js** — powerful asynchronous runtime
-- **Express** — fast, unopinionated web framework
+- **Express** — fast, unopinionated web framework (Highly optimized static buffer delivery)
 - **chokidar** — hot reload
 - **pkg** — single binary compilation
 
