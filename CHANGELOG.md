@@ -99,3 +99,6 @@
   * Verified structural integrity of the codebase following the fix for dynamic route resolution specificity order. The sorting algorithm ensures exact string segment matches are properly prioritized over wildcard segments (`:`).
   * Executed safe minor and patch dependency bumps.
   * Maintained test suite passing with 100% success rate.
+
+### v0.2.13
+- **fix(router):** preserve root path (`/`) when trimming trailing slashes, ensuring root mocks and proxy rules execute correctly.
