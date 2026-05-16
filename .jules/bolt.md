@@ -182,3 +182,7 @@ Express automatically executes heavy memory allocations when reading files with 
 
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+
+2024-05-24 — Correctness Fix for Root Path Proxy and Mocking
+Learning: Custom string manipulation loops meant to trim trailing characters (e.g., slashes) can unintentionally swallow root paths ("/") if their termination condition evaluates entirely down to index 0. This caused `moq` to reduce root paths to empty strings (`""`), breaking standard HTTP serving and upstream routing proxy targets.
+Action: Always ensure manual string traversals for paths preserve at least the first character (`j > 0` instead of `j >= 0`) so root directories remain valid.
