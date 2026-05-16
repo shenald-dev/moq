@@ -99,3 +99,12 @@
   * Verified structural integrity of the codebase following the fix for dynamic route resolution specificity order. The sorting algorithm ensures exact string segment matches are properly prioritized over wildcard segments (`:`).
   * Executed safe minor and patch dependency bumps.
   * Maintained test suite passing with 100% success rate.
+
+## v0.2.13
+
+* **Performance:**
+  * Optimized static payload delivery by serving payloads from `Buffer` instances via native `res.end()` rather than using Express's `res.send()`. This avoids expensive dynamic JSON parsing, string conversions, and framework overhead on hot paths.
+* **Lifecycle / Maintenance:**
+  * Validated structural soundness of the recent optimization via adversarial QA tests.
+  * Executed safe minor and patch dependency bumps (express).
+  * Released v0.2.13.
