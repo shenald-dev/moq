@@ -182,3 +182,11 @@ Express automatically executes heavy memory allocations when reading files with 
 
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+
+## 2026-05-17 — Fix hot path root URL trailing slash trimming
+
+Learning:
+When writing custom string manipulation loops (e.g., stripping trailing slashes via `charCodeAt()`), loop conditions such as `j >= 0` can inadvertently destroy single-character base paths (like the root path `/`), turning them into empty strings `""`.
+
+Action:
+Ensure custom string traversal loops intended to trim characters from the end of a string explicitly preserve at least one character when the character being trimmed constitutes the entire path segment (e.g., by checking `j > 0` instead of `j >= 0`). This ensures root endpoints (`/`) are correctly preserved and mockable.
