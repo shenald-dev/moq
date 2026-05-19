@@ -182,3 +182,11 @@ Express automatically executes heavy memory allocations when reading files with 
 
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+
+## 2024-05-19 — Correctly handle root path trailing slash truncation
+
+Learning:
+Custom trailing slash truncation logic (`_trimTrailingSlashes`) had a loop condition `j >= 0` that caused root paths (`/`) to be incorrectly reduced to an empty string `""` instead of remaining as `"/"`. This caused mock file lookups for root paths to incorrectly search for `GET-.json` instead of `GET-/.json`, preventing root path requests from matching their mock files.
+
+Action:
+Ensure custom string manipulation loops preserve at least one character for paths (e.g. `j > 0`) when stripping trailing slashes so root paths are correctly parsed.
