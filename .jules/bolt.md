@@ -182,3 +182,6 @@ Express automatically executes heavy memory allocations when reading files with 
 
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+2026-05-19 — Trim trailing slashes safely
+Learning: When removing trailing slashes from paths (like in URLs or file structures), manually iterating string character codes requires checking boundary conditions (like preserving a root slash `/`) to prevent mistakenly reducing root paths to empty strings and affecting route caching or file lookup.
+Action: Apply safer bounds checks (e.g. j > 0) when manually looping over string endpoints to modify characters on the edge of the string.
