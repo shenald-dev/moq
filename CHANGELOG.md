@@ -1,7 +1,8 @@
 # Changelog
 
-## v0.2.13
+## v0.2.14
 
+* **Maintenance:** Resolved merge conflicts with recent updates on master branch.
 * **Quality Assurance / Lifecycle:**
   * Verified structural integrity of the static payload optimization replacing Express res.send with native Buffer serving.
   * Executed safe minor and patch dependency bumps.
