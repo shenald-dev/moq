@@ -233,8 +233,7 @@ async function runTests() {
   } finally {
     const fs = require('fs');
     if (fs.existsSync(path.join(mocksDir, 'GET-', '.json'))) {
-      fs.unlinkSync(path.join(mocksDir, 'GET-', '.json'));
-    }
+      fs.unlinkSync(path.join(mocksDir, 'GET-', '.json'));    }
     server.reloadMocks();
   }
 
