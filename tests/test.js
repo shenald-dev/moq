@@ -227,14 +227,39 @@ async function runTests() {
       console.log('❌ Root path resolution failed', r);
       failed++;
     }
+
+    const r2 = await request('GET', '///', port);
+    if (r2.status === 200 && r2.body && r2.body.root === true) {
+      console.log('✅ Multi-slash root path resolution');
+      passed++;
+    } else {
+      console.log('❌ Multi-slash root path resolution failed', r2);
+      failed++;
+    }
   } catch (e) {
     console.log('❌ Root path resolution error', e);
     failed++;
   } finally {
     const fs = require('fs');
     if (fs.existsSync(path.join(mocksDir, 'GET-', '.json'))) {
-      fs.unlinkSync(path.join(mocksDir, 'GET-', '.json'));    }
+      fs.unlinkSync(path.join(mocksDir, 'GET-', '.json'));
+    }
     server.reloadMocks();
+  }
+
+  // Test 11: Multi-slash trailing path resolution
+  try {
+    const r = await request('GET', '/api/users//', port);
+    if (r.status === 200 && r.body && r.body.users) {
+      console.log('✅ Multi-slash trailing path resolution');
+      passed++;
+    } else {
+      console.log('❌ Multi-slash trailing path resolution failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Multi-slash trailing path resolution error', e);
+    failed++;
   }
 
   // Cleanup
