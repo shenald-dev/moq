@@ -211,7 +211,7 @@ async function runTests() {
   }
 
 
-  // Test 9: root route test
+  // Test 9: root route test and multiple slashes
   try {
     const fs = require('fs');
     fs.mkdirSync(path.join(mocksDir, 'GET-'), { recursive: true });
@@ -226,6 +226,16 @@ async function runTests() {
       console.log('❌ Root route mock failed', r);
       failed++;
     }
+
+    // Test 10: multiple trailing slashes
+    const r2 = await request('GET', '///', port);
+    if (r2.status === 200 && r2.body && r2.body.root === true) {
+      console.log('✅ Multiple trailing slashes reduced properly');
+      passed++;
+    } else {
+      console.log('❌ Multiple trailing slashes failed', r2);
+      failed++;
+    }
   } catch (e) {
     console.log('❌ Root route mock error', e);
     failed++;
@@ -236,6 +246,7 @@ async function runTests() {
     }
     server.reloadMocks(); // reset
   }
+
 
   // Cleanup
   httpServer.close();
