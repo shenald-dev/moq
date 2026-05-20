@@ -182,7 +182,6 @@ Express automatically executes heavy memory allocations when reading files with 
 
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
-
 ## 2024-05-18 — Root Path Trimming Fix
 
 Learning:
