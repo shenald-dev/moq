@@ -2,11 +2,10 @@
 
 ## v0.2.13
 
-* **Performance:** Optimized static payload delivery by serving raw file `Buffer` objects via native Node.js APIs (e.g. `res.end()`), bypassing the `Express` framework's `res.send()` overhead such as dynamic string-to-buffer conversion and inference.
-* **Lifecycle / Maintenance:**
-  * Executed safe dependency updates (Express bumped to 4.22.2).
-  * Removed orphaned standalone binaries to ensure clean repository hygiene.
-  * Verified structural soundness of the buffering optimization via test suite execution.
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the static payload optimization replacing Express res.send with native Buffer serving.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
 
 ## v0.2.12
 
