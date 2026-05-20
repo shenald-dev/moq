@@ -5,6 +5,7 @@
 const http = require('http');
 const { readFileSync, existsSync } = require('fs');
 const path = require('path');
+const assert = require('assert');
 
 // Test utilities
 function request(method, pathStr, port, body = null) {
@@ -41,13 +42,23 @@ async function runTests() {
 
   // Start server
   const MoqServer = require('../src/index');
-  const server = new MoqServer({ port, mocksDir, noReload: true });
+
+  // Unit tests for _trimTrailingSlashes
+  const moqInstance = new MoqServer({ port, mocksDir, noReload: true });
+  assert.strictEqual(moqInstance._trimTrailingSlashes('/'), '/');
+  assert.strictEqual(moqInstance._trimTrailingSlashes('///'), '/');
+  assert.strictEqual(moqInstance._trimTrailingSlashes(''), '');
+  assert.strictEqual(moqInstance._trimTrailingSlashes('/api/users/'), '/api/users');
+  assert.strictEqual(moqInstance._trimTrailingSlashes('/api/users'), '/api/users');
+  console.log('✅ Unit tests for _trimTrailingSlashes passed');
+
+  const server = moqInstance;
   const httpServer = server.app.listen(port, () => console.log(`🚀 Test server on :${port}`));
 
   // Wait for server startup
   await new Promise(r => setTimeout(r, 500));
 
-  let passed = 0, failed = 0;
+  let passed = 1, failed = 0; // _trimTrailingSlashes passed
 
   // Test 1: health
   try {
@@ -98,7 +109,6 @@ async function runTests() {
   try {
     const fs = require('fs');
     fs.writeFileSync(path.join(mocksDir, '404.json'), JSON.stringify({ custom: "404", message: "Page not found" }));
-    // force reload mocks since test uses noReload: true but wait, it uses fs.readFileSync every time if noDataCache is set or we can restart the server or just clear cache
     server.reloadMocks(); // Manually trigger reload
 
     const r = await request('GET', '/unknown2', port);
@@ -164,9 +174,6 @@ async function runTests() {
   // Test 6: URL decoding and traversal prevention
   try {
     const r = await request('GET', '/api/%252E%252E/secret', port);
-    // Since %252E%252E resolves to .. internally and fails validation,
-    // it will return null from resolveMockPath, continuing to the next()
-    // handler which eventually returns a 404 from the fallback error handler.
     if (r.status === 404 && r.body && r.body.error === 'Not found') {
       console.log('✅ URL traversal prevention');
       passed++;
