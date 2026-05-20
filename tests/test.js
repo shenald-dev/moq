@@ -210,6 +210,30 @@ async function runTests() {
     failed++;
   }
 
+  try {
+    const fs = require("fs");
+    fs.mkdirSync(path.join(mocksDir, "GET-"), { recursive: true });
+    fs.writeFileSync(path.join(mocksDir, "GET-", ".json"), JSON.stringify({ root: true }));
+    server.reloadMocks();
+    const r = await request("GET", "/", port);
+    if (r.status === 200 && r.body && r.body.root) {
+      console.log("✅ Root mock GET /");
+      passed++;
+    } else {
+      console.log("❌ Root mock GET failed", r);
+      failed++;
+    }
+  } catch (e) {
+    console.log("❌ Root mock GET error", e);
+    failed++;
+  } finally {
+    const fs = require("fs");
+    if (fs.existsSync(path.join(mocksDir, "GET-", ".json"))) {
+      fs.unlinkSync(path.join(mocksDir, "GET-", ".json"));
+    }
+    server.reloadMocks();
+  }
+
   // Cleanup
   httpServer.close();
 
