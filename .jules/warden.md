@@ -94,16 +94,22 @@ Verified structural soundness of replacing app.all('*') with app.use() for catch
 Alignment / Deferred:
 Upgraded minor/patch dependencies safely via npm update. Verified tests pass.
 <<<<<<< HEAD
+<<<<<<< HEAD
 2026-05-12 — Assessment & Lifecycle
 Observation / Pruned:
 Observed optimization for static payload delivery (bypassing Express res.send overhead using raw Buffers). Verified implementation using adversarial tests for URL traversal. Pruned orphaned generated standalone binaries (moq-linux, moq-macos, moq-win.exe) to maintain repository hygiene.
 Alignment / Deferred:
 Deferred major version upgrades for express (5.x), chokidar (5.x), and yargs (18.x) to prioritize stability, as they require dedicated architecture migrations. Updated Express dependency safely to 4.22.2.
 =======
+=======
+>>>>>>> origin/master
 
 2024-11-22 — Assessment & Lifecycle
 Observation / Pruned:
 Verified structural soundness of the static payload optimization (replacing Express `res.send()` with native `Buffer` serving via `fs.promises.readFile`). No dead code was produced by this optimization.
 Alignment / Deferred:
 Applied safe minor/patch dependency updates. Tests passed successfully.
+<<<<<<< HEAD
+>>>>>>> origin/master
+=======
 >>>>>>> origin/master
