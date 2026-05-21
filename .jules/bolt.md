@@ -198,6 +198,23 @@ Custom string manipulation loops (like `_trimTrailingSlashes`) using loop condit
 
 Action:
 When writing custom string manipulation loops to trim trailing characters (e.g. slashes), ensure loop conditions (such as using `j > 0` instead of `j >= 0`) preserve at least one character to prevent root paths from being incorrectly destroyed.
+<<<<<<< HEAD
+>>>>>>> origin/master
+## 2024-05-14 — Fix trailing slash removal logic to preserve root paths
+
+Learning:
+In custom string manipulation functions like `_trimTrailingSlashes` where characters are stripped from the end (e.g., removing trailing slashes), the loop condition must be carefully bounded. A condition like `j >= 0` will consume every character if they all match, effectively reducing the root path `"/"` to an empty string `""`, which breaks mapping expectations for root endpoints.
+
+Action:
+Ensure custom string trimming loops explicitly preserve at least one character when modifying paths by setting the condition to `j > 0` (or returning early if the string is exactly `"/"`). This correctly normalizes `"//"` down to `"/"` without accidentally producing an empty string.
+=======
+## $(date +%Y-%m-%d) — Prevent Double Slashes in Proxy Paths
+
+Learning:
+When constructing proxied upstream paths via string concatenation, if the configured `proxyTarget` explicitly ends in a root slash (e.g. `http://localhost:8080/`), the parsed `proxyBasePath` equals `/`. Blindly concatenating this with an incoming path that also begins with a slash (e.g. `/api/users`) results in a double-slash string (e.g. `//api/users`), which breaks correct downstream path resolution and causes unexpected 404s.
+
+Action:
+Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
 >>>>>>> origin/master
 ## 2024-05-14 — Fix trailing slash removal logic to preserve root paths
 
