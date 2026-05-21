@@ -189,3 +189,10 @@ Custom string manipulation loops (like `_trimTrailingSlashes`) using loop condit
 
 Action:
 When writing custom string manipulation loops to trim trailing characters (e.g. slashes), ensure loop conditions (such as using `j > 0` instead of `j >= 0`) preserve at least one character to prevent root paths from being incorrectly destroyed.
+## $(date +%Y-%m-%d) — Prevent Double Slashes in Proxy Paths
+
+Learning:
+When constructing proxied upstream paths via string concatenation, if the configured `proxyTarget` explicitly ends in a root slash (e.g. `http://localhost:8080/`), the parsed `proxyBasePath` equals `/`. Blindly concatenating this with an incoming path that also begins with a slash (e.g. `/api/users`) results in a double-slash string (e.g. `//api/users`), which breaks correct downstream path resolution and causes unexpected 404s.
+
+Action:
+Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
