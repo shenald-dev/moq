@@ -185,3 +185,17 @@ Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and t
 2024-05-15 — Fix Root Path Resolution Bug
 Learning: In custom string parsing loops, condition bounds are critical. When reducing strings via trailing character checks (e.g., removing trailing slashes), the loop must ensure it does not exhaust the entire string if the string consists entirely of that character (like the root path `/`), otherwise it incorrectly reduces to an empty string, breaking subsequent file path resolution logic.
 Action: Always verify loop conditions that strip characters preserve base paths. Ensure root path (`/`) resolution has dedicated test coverage to prevent regression in string manipulation utilities.
+
+
+Learning:
+Custom string manipulation loops (like `_trimTrailingSlashes`) using loop conditions such as `j >= 0` can inadvertently reduce root paths (`"/"`) to empty strings, breaking path resolution for root endpoints.
+
+Action:
+When writing custom string manipulation loops to trim trailing characters (e.g. slashes), ensure loop conditions (such as using `j > 0` instead of `j >= 0`) preserve at least one character to prevent root paths from being incorrectly destroyed.
+## $(date +%Y-%m-%d) — Prevent Double Slashes in Proxy Paths
+
+Learning:
+When constructing proxied upstream paths via string concatenation, if the configured `proxyTarget` explicitly ends in a root slash (e.g. `http://localhost:8080/`), the parsed `proxyBasePath` equals `/`. Blindly concatenating this with an incoming path that also begins with a slash (e.g. `/api/users`) results in a double-slash string (e.g. `//api/users`), which breaks correct downstream path resolution and causes unexpected 404s.
+
+Action:
+Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
