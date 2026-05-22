@@ -1,12 +1,5 @@
 # Changelog
 
-## v0.2.13
-
-* **Quality Assurance / Lifecycle:**
-  * Verified structural integrity of the static payload optimization replacing Express res.send with native Buffer serving.
-  * Executed safe minor and patch dependency bumps.
-  * Maintained test suite passing with 100% success rate.
-
 ## v0.2.12
 
 * **Performance:** Replaced `app.all('*')` with `app.use()` for the primary routing handler, bypassing regex compilation overhead and increasing baseline request throughput.
