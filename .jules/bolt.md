@@ -196,3 +196,6 @@ When constructing proxied upstream paths via string concatenation, if the config
 
 Action:
 Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
+2024-05-24 — Proxy path construction optimization
+Learning: Redundant string checks (.endsWith('/')) and allocations (.slice()) on hot paths like proxy request routing create measurable overhead.
+Action: Pre-parse and normalize configuration values like base paths in constructors to avoid per-request allocations.
