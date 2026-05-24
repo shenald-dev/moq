@@ -196,3 +196,11 @@ When constructing proxied upstream paths via string concatenation, if the config
 
 Action:
 Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
+
+## 2024-05-18 — Pre-parse proxy target paths to reduce hot-path string allocation
+
+Learning:
+`proxyTarget` trailing slashes were being unnecessarily checked and sliced using O(N) operations (`.endsWith('/')`, `.slice()`) on every single incoming proxy request inside `proxyRequest()`.
+
+Action:
+Normalize `proxyBasePath` exactly once in the `MoqServer` constructor, converting a root `/` to `''`. This allows the hot path to simply use string concatenation, bypassing redundant allocations and increasing reverse proxy throughput.
