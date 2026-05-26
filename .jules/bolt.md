@@ -196,3 +196,10 @@ When constructing proxied upstream paths via string concatenation, if the config
 
 Action:
 Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
+## $(date +%Y-%m-%d) — Optimize proxyBasePath on Hot Path
+
+Learning:
+Inside the `proxyRequest` method, the server was redundantly executing `.endsWith('/')` and `.slice(0, -1)` on the static configuration value `this.proxyBasePath` for every single proxied request. This creates measurable overhead on a critical hot path that executes O(1) string operations.
+
+Action:
+Pre-computed the normalized `proxyBasePath` explicitly to an empty string `""` in the constructor initialization phase when the base path equals `/`. This guarantees the base path never has a trailing slash, allowing the `proxyRequest` handler to simply perform a direct string concatenation (`this.proxyBasePath + reqPath`), eliminating repetitive overhead per request.
