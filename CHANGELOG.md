@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.15
+
+* **Performance:** Pre-computed proxyBasePath for faster hot path routing.
+* **Lifecycle / Maintenance:**
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
+
 ## v0.2.13
 
 * **Quality Assurance / Lifecycle:**
