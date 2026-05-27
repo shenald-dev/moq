@@ -190,7 +190,10 @@ Custom string manipulation loops (like `_trimTrailingSlashes`) using loop condit
 Action:
 When writing custom string manipulation loops to trim trailing characters (e.g. slashes), ensure loop conditions (such as using `j > 0` instead of `j >= 0`) preserve at least one character to prevent root paths from being incorrectly destroyed.
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> origin/master
 ## $(date +%Y-%m-%d) — Prevent Double Slashes in Proxy Paths
 
 Learning:
@@ -198,4 +201,14 @@ When constructing proxied upstream paths via string concatenation, if the config
 
 Action:
 Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
+<<<<<<< HEAD
+>>>>>>> origin/master
+=======
+## 2024-05-27 — Proxy Routing Micro-Optimization
+
+Learning:
+String operations like `.endsWith('/')` and `.slice(0, -1)` inside hot paths (e.g., `proxyRequest`) for every incoming proxy request generate unnecessary per-request CPU and allocation overhead.
+
+Action:
+Pre-parse and normalize configuration paths (like `proxyBasePath` to `''` instead of `'/'`) during initialization in constructors, allowing the hot path to safely concatenate strings without runtime conditional trimming.
 >>>>>>> origin/master
