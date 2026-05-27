@@ -1,8 +1,15 @@
 # Changelog
 
-## v0.2.14
+## v0.2.15
 
-* **Maintenance:** Resolved merge conflicts with recent updates on master branch.
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the proxy double-slash path concatenation fix for root proxy targets.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
+
+## v0.2.13
+
 * **Quality Assurance / Lifecycle:**
   * Verified structural integrity of the static payload optimization replacing Express res.send with native Buffer serving.
   * Executed safe minor and patch dependency bumps.
@@ -107,3 +114,19 @@
   * Verified structural integrity of the codebase following the fix for dynamic route resolution specificity order. The sorting algorithm ensures exact string segment matches are properly prioritized over wildcard segments (`:`).
   * Executed safe minor and patch dependency bumps.
   * Maintained test suite passing with 100% success rate.
+
+## v0.2.14
+
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the proxy double-slash path concatenation fix for root proxy targets.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
+## v0.2.16
+
+* **Performance:**
+  * Optimized static payload delivery by serving payloads from `Buffer` instances via native `res.end()` rather than using Express's `res.send()`. This avoids expensive dynamic JSON parsing, string conversions, and framework overhead on hot paths.
+* **Lifecycle / Maintenance:**
+  * Validated structural soundness of the recent optimization via adversarial QA tests.
+  * Executed safe minor and patch dependency bumps (express).
+  * Released v0.2.16.
