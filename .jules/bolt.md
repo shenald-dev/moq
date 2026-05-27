@@ -199,3 +199,10 @@ Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings
 2025-05-25 — Optimize proxy basePath concatenation
 Learning: In the proxy routing path, `proxyBasePath.endsWith('/')` and `.slice()` were executed per-request, causing redundant string operations on hot paths.
 Action: To optimize performance, parse and normalize `proxyBasePath` once in the `MoqServer` constructor by checking for root path `/` and explicitly setting it to `''`. This avoids allocation and per-request evaluation overhead inside `proxyRequest`.
+## 2024-05-27 — Proxy Routing Micro-Optimization
+
+Learning:
+String operations like `.endsWith('/')` and `.slice(0, -1)` inside hot paths (e.g., `proxyRequest`) for every incoming proxy request generate unnecessary per-request CPU and allocation overhead.
+
+Action:
+Pre-parse and normalize configuration paths (like `proxyBasePath` to `''` instead of `'/'`) during initialization in constructors, allowing the hot path to safely concatenate strings without runtime conditional trimming.
