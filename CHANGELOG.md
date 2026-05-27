@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.15] - $(date +%Y-%m-%d)
+
+### Performance
+- Optimized proxyBasePath concatenation on hot path to avoid per-request `endsWith()` and `slice()` operations.
+
+
 ## v0.2.13
 
 * **Quality Assurance / Lifecycle:**
