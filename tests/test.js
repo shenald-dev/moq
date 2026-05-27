@@ -273,7 +273,93 @@ async function runTests() {
     failed++;
   }
 
-  // Cleanup
+
+  // Test 11: Proxy base path root edge cases
+  try {
+    const targetServer = http.createServer((req, res) => {
+      res.end(req.url);
+    }).listen(0);
+
+    await new Promise(r => targetServer.on('listening', r));
+    const targetPort = targetServer.address().port;
+
+    // Test with root path '/' in proxyTarget
+    const proxyServer1 = new MoqServer({ port: 0, mocksDir: path.join(__dirname, 'empty-mocks'), proxy: true, proxyTarget: `http://localhost:${targetPort}/` });
+    const proxyHttpServer1 = await new Promise(r => {
+      const s = proxyServer1.app.listen(0, function() {
+        proxyServer1.port = this.address().port;
+        r(s);
+      });
+    });
+
+    const res1 = await new Promise(r => http.get(`http://localhost:${proxyServer1.port}/api/users`, r));
+    let data1 = '';
+    res1.on('data', c => data1 += c);
+    res1.on('end', () => {
+      if (data1 === '/api/users') {
+        passed++;
+      } else {
+        console.log('❌ Proxy base path root failed (case 1). Expected /api/users, got:', data1);
+        failed++;
+      }
+    });
+    await new Promise(r => res1.on('end', r));
+
+    // Test with empty path '' (no trailing slash in proxyTarget URL implies '/')
+    const proxyServer2 = new MoqServer({ port: 0, mocksDir: path.join(__dirname, 'empty-mocks'), proxy: true, proxyTarget: `http://localhost:${targetPort}` });
+    const proxyHttpServer2 = await new Promise(r => {
+      const s = proxyServer2.app.listen(0, function() {
+        proxyServer2.port = this.address().port;
+        r(s);
+      });
+    });
+
+    const res2 = await new Promise(r => http.get(`http://localhost:${proxyServer2.port}/`, r));
+    let data2 = '';
+    res2.on('data', c => data2 += c);
+    res2.on('end', () => {
+      if (data2 === '/') {
+        passed++;
+      } else {
+        console.log('❌ Proxy base path root failed (case 2). Expected /, got:', data2);
+        failed++;
+      }
+    });
+    await new Promise(r => res2.on('end', r));
+
+    // Test with subpath ending in slash
+    const proxyServer3 = new MoqServer({ port: 0, mocksDir: path.join(__dirname, 'empty-mocks'), proxy: true, proxyTarget: `http://localhost:${targetPort}/base/` });
+    const proxyHttpServer3 = await new Promise(r => {
+      const s = proxyServer3.app.listen(0, function() {
+        proxyServer3.port = this.address().port;
+        r(s);
+      });
+    });
+
+    const res3 = await new Promise(r => http.get(`http://localhost:${proxyServer3.port}/api`, r));
+    let data3 = '';
+    res3.on('data', c => data3 += c);
+    res3.on('end', () => {
+      if (data3 === '/base/api') {
+        passed++;
+        console.log('✅ Proxy base path edge cases (root / multiple slashes)');
+      } else {
+        console.log('❌ Proxy base path root failed (case 3). Expected /base/api, got:', data3);
+        failed++;
+      }
+    });
+    await new Promise(r => res3.on('end', r));
+
+    targetServer.close();
+    proxyHttpServer1.close();
+    proxyHttpServer2.close();
+    proxyHttpServer3.close();
+  } catch (e) {
+    console.log('❌ Proxy base path edge cases error', e);
+    failed++;
+  }
+
+// Cleanup
   httpServer.close();
 
   console.log(`\n📊 Tests: ${passed} passed, ${failed} failed`);
