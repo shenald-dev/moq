@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.15
+
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the proxy double-slash path concatenation fix for root proxy targets.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
+
 ## v0.2.13
 
 * **Quality Assurance / Lifecycle:**
@@ -104,5 +112,12 @@
 
 * **Quality Assurance / Lifecycle:**
   * Verified structural integrity of the codebase following the fix for dynamic route resolution specificity order. The sorting algorithm ensures exact string segment matches are properly prioritized over wildcard segments (`:`).
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
+## v0.2.14
+
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the proxy double-slash path concatenation fix for root proxy targets.
   * Executed safe minor and patch dependency bumps.
   * Maintained test suite passing with 100% success rate.
