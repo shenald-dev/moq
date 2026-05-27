@@ -32,8 +32,13 @@ class MoqServer {
         this.proxyIsHttps = parsed.protocol === 'https:';
         this.proxyHostname = parsed.hostname;
         this.proxyPort = parsed.port || (this.proxyIsHttps ? 443 : 80);
+<<<<<<< HEAD
         let base = this._trimTrailingSlashes(parsed.pathname);
         this.proxyBasePath = base === '/' ? '' : base;
+=======
+        const trimmed = this._trimTrailingSlashes(parsed.pathname);
+        this.proxyBasePath = trimmed === '/' ? '' : trimmed;
+>>>>>>> origin/master
         this.parsedProxyTarget = true;
       } catch (err) {
         console.error(`Invalid proxy target URL in options: ${this.proxyTarget}`);
