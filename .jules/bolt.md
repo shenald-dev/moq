@@ -185,3 +185,18 @@ Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and t
 2024-05-13 — Fix root slash path mapping bug
 Learning: The custom `_trimTrailingSlashes` function reduced root paths (`/`) to empty strings, which breaks route mapping for the root level. When stripping trailing slashes manually via looping `charCodeAt`, the loop condition must enforce `> 0` instead of `>= 0` to preserve the first character.
 Action: Always verify manual string manipulation loop boundaries, particularly when stripping paths or normalising paths to ensure at least the root path `/` is returned correctly instead of `""`.
+
+## $(date +%Y-%m-%d) — Prevent Double Slashes in Proxy Paths
+
+Learning:
+When constructing proxied upstream paths via string concatenation, if the configured `proxyTarget` explicitly ends in a root slash (e.g. `http://localhost:8080/`), the parsed `proxyBasePath` equals `/`. Blindly concatenating this with an incoming path that also begins with a slash (e.g. `/api/users`) results in a double-slash string (e.g. `//api/users`), which breaks correct downstream path resolution and causes unexpected 404s.
+
+Action:
+Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
+## 2024-05-27 — Proxy Routing Micro-Optimization
+
+Learning:
+String operations like `.endsWith('/')` and `.slice(0, -1)` inside hot paths (e.g., `proxyRequest`) for every incoming proxy request generate unnecessary per-request CPU and allocation overhead.
+
+Action:
+Pre-parse and normalize configuration paths (like `proxyBasePath` to `''` instead of `'/'`) during initialization in constructors, allowing the hot path to safely concatenate strings without runtime conditional trimming.
