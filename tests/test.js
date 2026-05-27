@@ -273,6 +273,81 @@ async function runTests() {
     failed++;
   }
 
+
+  // Test 11: Proxy basePath '/' normalization
+  try {
+    const targetServerRoot = http.createServer((req, res) => {
+      res.end(req.url);
+    }).listen(0);
+
+    await new Promise(r => targetServerRoot.on('listening', r));
+    const targetPortRoot = targetServerRoot.address().port;
+
+    const proxyServerRoot = new MoqServer({ port: 0, mocksDir: path.join(__dirname, 'empty-mocks'), proxy: true, proxyTarget: `http://localhost:${targetPortRoot}/` });
+    const proxyHttpServerRoot = await new Promise(r => {
+      const s = proxyServerRoot.app.listen(0, function() {
+        proxyServerRoot.port = this.address().port;
+        r(s);
+      });
+    });
+
+    const resRoot = await new Promise(r => http.get(`http://localhost:${proxyServerRoot.port}/api/users`, r));
+    let dataRoot = '';
+    resRoot.on('data', c => dataRoot += c);
+    resRoot.on('end', () => {
+      if (dataRoot === '/api/users') {
+        console.log('✅ Proxy basePath "/" normalization');
+        passed++;
+      } else {
+        console.log('❌ Proxy basePath "/" normalization failed. Expected /api/users, got:', dataRoot);
+        failed++;
+      }
+      targetServerRoot.close();
+      proxyHttpServerRoot.close();
+    });
+    await new Promise(r => resRoot.on('end', r));
+  } catch (e) {
+    console.log('❌ Proxy basePath "/" normalization error', e);
+    failed++;
+  }
+
+  // Test 12: Proxy basePath '' normalization
+  try {
+    const targetServerEmpty = http.createServer((req, res) => {
+      res.end(req.url);
+    }).listen(0);
+
+    await new Promise(r => targetServerEmpty.on('listening', r));
+    const targetPortEmpty = targetServerEmpty.address().port;
+
+    const proxyServerEmpty = new MoqServer({ port: 0, mocksDir: path.join(__dirname, 'empty-mocks'), proxy: true, proxyTarget: `http://localhost:${targetPortEmpty}` });
+    const proxyHttpServerEmpty = await new Promise(r => {
+      const s = proxyServerEmpty.app.listen(0, function() {
+        proxyServerEmpty.port = this.address().port;
+        r(s);
+      });
+    });
+
+    const resEmpty = await new Promise(r => http.get(`http://localhost:${proxyServerEmpty.port}/api/users`, r));
+    let dataEmpty = '';
+    resEmpty.on('data', c => dataEmpty += c);
+    resEmpty.on('end', () => {
+      if (dataEmpty === '/api/users') {
+        console.log('✅ Proxy basePath "" normalization');
+        passed++;
+      } else {
+        console.log('❌ Proxy basePath "" normalization failed. Expected /api/users, got:', dataEmpty);
+        failed++;
+      }
+      targetServerEmpty.close();
+      proxyHttpServerEmpty.close();
+    });
+    await new Promise(r => resEmpty.on('end', r));
+  } catch (e) {
+    console.log('❌ Proxy basePath "" normalization error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 
