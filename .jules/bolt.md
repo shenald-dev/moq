@@ -32,15 +32,20 @@ Learning:
 When manually trimming trailing slashes on strings via `charCodeAt` in loops (like `_trimTrailingSlashes`), setting the loop condition to `j >= 0` allows the logic to incorrectly consume the very first character of the string if it matches the slash character. For single-slash root paths (like `/`), this incorrectly reduces the path to an empty string (`""`), breaking expected routing behavior and fallback mechanisms targeting root endpoints.
 
 Action:
-<<<<<<< HEAD
-Ensure custom string traversal loops intended to trim characters from the right side, but which also must preserve the string prefix or root semantics, use `j > 0` instead of `j >= 0` to explicitly preserve at least the 0th index character.
-=======
 When writing custom string manipulation loops to trim trailing characters (e.g. slashes), ensure loop conditions (such as using `j > 0` instead of `j >= 0`) preserve at least one character to prevent root paths from being incorrectly destroyed.
-## $(date +%Y-%m-%d) — Prevent Double Slashes in Proxy Paths
+
+## 2024-05-20 — Prevent Double Slashes in Proxy Paths
 
 Learning:
 When constructing proxied upstream paths via string concatenation, if the configured `proxyTarget` explicitly ends in a root slash (e.g. `http://localhost:8080/`), the parsed `proxyBasePath` equals `/`. Blindly concatenating this with an incoming path that also begins with a slash (e.g. `/api/users`) results in a double-slash string (e.g. `//api/users`), which breaks correct downstream path resolution and causes unexpected 404s.
 
 Action:
 Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
->>>>>>> origin/master
+
+## 2024-05-27 — Proxy Routing Micro-Optimization
+
+Learning:
+String operations like `.endsWith('/')` and `.slice(0, -1)` inside hot paths (e.g., `proxyRequest`) for every incoming proxy request generate unnecessary per-request CPU and allocation overhead.
+
+Action:
+Pre-parse and normalize configuration paths (like `proxyBasePath` to `''` instead of `'/'`) during initialization in constructors, allowing the hot path to safely concatenate strings without runtime conditional trimming.
