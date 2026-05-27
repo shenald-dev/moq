@@ -33,6 +33,7 @@ class MoqServer {
         this.proxyHostname = parsed.hostname;
         this.proxyPort = parsed.port || (this.proxyIsHttps ? 443 : 80);
         const trimmed = this._trimTrailingSlashes(parsed.pathname);
+        // Normalize root path to empty string to prevent double slashes (e.g., //api/users) during proxy target concatenation
         this.proxyBasePath = trimmed === '/' ? '' : trimmed;
         this.parsedProxyTarget = true;
       } catch (err) {
