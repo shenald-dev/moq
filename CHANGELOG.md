@@ -2,9 +2,8 @@
 
 ## v0.2.15
 
-
-* **Performance:** Pre-computed proxyBasePath for faster hot path routing.
-* **Lifecycle / Maintenance:**
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the proxy double-slash path concatenation fix for root proxy targets.
   * Executed safe minor and patch dependency bumps.
   * Maintained test suite passing with 100% success rate.
 
