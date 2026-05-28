@@ -1,8 +1,13 @@
 # Changelog
 
-## [0.2.16] - $(date +%Y-%m-%d)
-### Performance
-- Optimized proxy reverse routing on hot paths to avoid redundant string allocations and manipulation on each connection.
+## v0.2.16
+
+* **Performance:**
+  * Optimized proxy reverse routing on hot paths to avoid redundant string allocations and manipulation on each connection.
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the proxyBasePath optimization.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
 
 
 ## v0.2.15
