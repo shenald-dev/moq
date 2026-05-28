@@ -182,10 +182,7 @@ Express automatically executes heavy memory allocations when reading files with 
 
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
-2024-05-15 — Fix Root Path Resolution Bug
-Learning: In custom string parsing loops, condition bounds are critical. When reducing strings via trailing character checks (e.g., removing trailing slashes), the loop must ensure it does not exhaust the entire string if the string consists entirely of that character (like the root path `/`), otherwise it incorrectly reduces to an empty string, breaking subsequent file path resolution logic.
-Action: Always verify loop conditions that strip characters preserve base paths. Ensure root path (`/`) resolution has dedicated test coverage to prevent regression in string manipulation utilities.
-
+## $(date +%Y-%m-%d) — Fix Root Path Trimming
 
 Learning:
 Custom string manipulation loops (like `_trimTrailingSlashes`) using loop conditions such as `j >= 0` can inadvertently reduce root paths (`"/"`) to empty strings, breaking path resolution for root endpoints.
@@ -199,8 +196,6 @@ When constructing proxied upstream paths via string concatenation, if the config
 
 Action:
 Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
-
-
 ## 2024-05-27 — Proxy Routing Micro-Optimization
 
 Learning:
@@ -208,3 +203,6 @@ String operations like `.endsWith('/')` and `.slice(0, -1)` inside hot paths (e.
 
 Action:
 Pre-parse and normalize configuration paths (like `proxyBasePath` to `''` instead of `'/'`) during initialization in constructors, allowing the hot path to safely concatenate strings without runtime conditional trimming.
+2024-05-15 — Fix Root Path Resolution Bug
+Learning: In custom string parsing loops, condition bounds are critical. When reducing strings via trailing character checks (e.g., removing trailing slashes), the loop must ensure it does not exhaust the entire string if the string consists entirely of that character (like the root path `/`), otherwise it incorrectly reduces to an empty string, breaking subsequent file path resolution logic.
+Action: Always verify loop conditions that strip characters preserve base paths. Ensure root path (`/`) resolution has dedicated test coverage to prevent regression in string manipulation utilities.
