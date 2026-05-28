@@ -188,20 +188,16 @@ Learning:
 The custom string trimming function `_trimTrailingSlashes` reduced the root path (`/`) to an empty string (`""`) because the loop condition `j >= 0` evaluated and decremented past the first character. This causes bugs when resolving the root path, breaking proxy functionality where `this.proxyBasePath` incorrectly becomes empty instead of retaining the root `/` character.
 
 Action:
-<<<<<<< HEAD
 Ensure loop conditions in custom string manipulation algorithms account for retaining at least one character when necessary. In `_trimTrailingSlashes`, changing the condition from `j >= 0` to `j > 0` ensures the root path `/` is returned correctly without trimming it entirely.
-=======
-When writing custom string manipulation loops to trim trailing characters (e.g. slashes), ensure loop conditions (such as using `j > 0` instead of `j >= 0`) preserve at least one character to prevent root paths from being incorrectly destroyed.
-## $(date +%Y-%m-%d) — Prevent Double Slashes in Proxy Paths
+
+## 2024-05-21 — Prevent Double Slashes in Proxy Paths
 
 Learning:
 When constructing proxied upstream paths via string concatenation, if the configured `proxyTarget` explicitly ends in a root slash (e.g. `http://localhost:8080/`), the parsed `proxyBasePath` equals `/`. Blindly concatenating this with an incoming path that also begins with a slash (e.g. `/api/users`) results in a double-slash string (e.g. `//api/users`), which breaks correct downstream path resolution and causes unexpected 404s.
 
 Action:
 Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
-<<<<<<< HEAD
->>>>>>> origin/master
-=======
+
 ## 2024-05-27 — Proxy Routing Micro-Optimization
 
 Learning:
@@ -209,4 +205,3 @@ String operations like `.endsWith('/')` and `.slice(0, -1)` inside hot paths (e.
 
 Action:
 Pre-parse and normalize configuration paths (like `proxyBasePath` to `''` instead of `'/'`) during initialization in constructors, allowing the hot path to safely concatenate strings without runtime conditional trimming.
->>>>>>> origin/master

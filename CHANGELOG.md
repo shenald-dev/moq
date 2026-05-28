@@ -4,6 +4,10 @@
 
 * **Bug Fixes:**
   * Fixed a bug where `_trimTrailingSlashes` incorrectly reduced the root path (`/`) to an empty string, breaking root path resolution and proxy targets.
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the proxyBasePath optimization.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
 
 
 ## v0.2.15
