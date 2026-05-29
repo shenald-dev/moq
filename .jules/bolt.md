@@ -203,11 +203,3 @@ String operations like `.endsWith('/')` and `.slice(0, -1)` inside hot paths (e.
 
 Action:
 Pre-parse and normalize configuration paths (like `proxyBasePath` to `''` instead of `'/'`) during initialization in constructors, allowing the hot path to safely concatenate strings without runtime conditional trimming.
-
-## 2024-05-18 — Pre-parse proxy target paths to reduce hot-path string allocation
-
-Learning:
-`proxyTarget` trailing slashes were being unnecessarily checked and sliced using O(N) operations (`.endsWith('/')`, `.slice()`) on every single incoming proxy request inside `proxyRequest()`.
-
-Action:
-Normalize `proxyBasePath` exactly once in the `MoqServer` constructor, converting a root `/` to `''`. This allows the hot path to simply use string concatenation, bypassing redundant allocations and increasing reverse proxy throughput.
