@@ -1,9 +1,6 @@
 We are given a merge conflict in CHANGELOG.md between base (master) and head (PR branch).
  The ancestor is the common base.
 
-<<<<<<< HEAD
- We are to perform a 3-way merge and output the resolved file.
-=======
 ## v0.2.17
 
 * **Quality Assurance / Lifecycle:**
@@ -29,7 +26,7 @@ We are given a merge conflict in CHANGELOG.md between base (master) and head (PR
 
 
 ## v0.2.13
->>>>>>> origin/master
+
 
  Steps:
  1. We have the ancestor, base, and head versions (though truncated in the description, we have the diffs and the full versions in the context).
