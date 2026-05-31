@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.15
+
+* **Performance:** Pre-computed proxyBasePath for faster hot path routing.
+* **Lifecycle / Maintenance:**
 ## [0.2.15] - $(date +%Y-%m-%d)
 
 ### Performance
