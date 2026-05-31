@@ -674,3 +674,41 @@ We are given a merge conflict in the file `.jules/bolt.md`.
         Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
         2026-05-19 — Trim trailing slashes safely
         ... [
+Action:
+Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+## $(date +%Y-%m-%d) — Fix Root Path Trimming
+
+Learning:
+Custom string manipulation loops (like `_trimTrailingSlashes`) using loop conditions such as `j >= 0` can inadvertently reduce root paths (`"/"`) to empty strings, breaking path resolution for root endpoints.
+
+Action:
+When writing custom string manipulation loops to trim trailing characters (e.g. slashes), ensure loop conditions (such as using `j > 0` instead of `j >= 0`) preserve at least one character to prevent root paths from being incorrectly destroyed.
+## $(date +%Y-%m-%d) — Prevent Double Slashes in Proxy Paths
+
+Learning:
+When constructing proxied upstream paths via string concatenation, if the configured `proxyTarget` explicitly ends in a root slash (e.g. `http://localhost:8080/`), the parsed `proxyBasePath` equals `/`. Blindly concatenating this with an incoming path that also begins with a slash (e.g. `/api/users`) results in a double-slash string (e.g. `//api/users`), which breaks correct downstream path resolution and causes unexpected 404s.
+
+Action:
+Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
+## $(date +%Y-%m-%d) — Optimize Proxy Request Path Construction Hot Path
+
+Learning:
+When constructing proxied upstream paths via string concatenation in `proxyRequest`, performing redundant checks like `this.proxyBasePath.endsWith('/')` and `this.proxyBasePath.slice(0, -1)` on every incoming request introduces unnecessary CPU overhead and string allocation on a critical hot path.
+
+Action:
+Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` once during initialization (in the `MoqServer` constructor). This allows the hot path in `proxyRequest` to safely construct the `targetPath` via direct string concatenation (`this.proxyBasePath + ...`) without conditional trimming logic.
+## $(date +%Y-%m-%d) — Proxy Routing Micro-Optimization
+## 2025-05-25 - Optimize proxy basePath concatenation
+
+Learning:
+In the proxy routing path, `proxyBasePath.endsWith('/')` and `.slice()` were executed per-request, causing redundant string operations on hot paths.
+
+Action:
+To optimize performance, parse and normalize `proxyBasePath` once in the `MoqServer` constructor by checking for root path `/` and explicitly setting it to `''`. This avoids allocation and per-request evaluation overhead inside `proxyRequest`.
+## 2024-05-27 — Proxy Routing Micro-Optimization
+
+Learning:
+String operations like `.endsWith('/')` and `.slice(0, -1)` inside hot paths (e.g., `proxyRequest`) for every incoming proxy request generate unnecessary per-request CPU and allocation overhead.
+
+Action:
+Pre-parse and normalize configuration paths (like `proxyBasePath` to `''` instead of `'/'`) during initialization in constructors, allowing the hot path to safely concatenate strings without runtime conditional trimming.
