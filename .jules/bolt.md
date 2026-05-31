@@ -739,6 +739,9 @@ String operations like `.endsWith('/')` and `.slice(0, -1)` inside hot paths (e.
 
 Action:
 Pre-parse and normalize configuration paths (like `proxyBasePath` to `''` instead of `'/'`) during initialization in constructors, allowing the hot path to safely concatenate strings without runtime conditional trimming.
+2024-05-15 — Fix Root Path Resolution Bug
+Learning: In custom string parsing loops, condition bounds are critical. When reducing strings via trailing character checks (e.g., removing trailing slashes), the loop must ensure it does not exhaust the entire string if the string consists entirely of that character (like the root path `/`), otherwise it incorrectly reduces to an empty string, breaking subsequent file path resolution logic.
+Action: Always verify loop conditions that strip characters preserve base paths. Ensure root path (`/`) resolution has dedicated test coverage to prevent regression in string manipulation utilities.
 
 ## 2026-05-17 — Fix hot path root URL trailing slash trimming
 
