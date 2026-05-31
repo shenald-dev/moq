@@ -676,6 +676,9 @@ We are given a merge conflict in the file `.jules/bolt.md`.
         ... [
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+2026-05-18 — Fix correctness bug where trimming trailing slashes cleared root path routing
+Learning: The string trailing slash trimming algorithm `while (j >= 0 && str.charCodeAt(j) === 47) j--;` would completely exhaust a root path `'/'` string and reduce it to `""`. This prevented proper resolution of `GET-/.json` for `GET /`. The fix is simple: ensure at least one character is preserved by changing the loop condition to `j > 0`.
+Action: When writing custom string manipulation loops (e.g., removing trailing slashes), ensure loop conditions preserve at least one character to prevent root paths from being incorrectly reduced to empty strings.
 
 ## 2024-05-19 — Correctly handle root path trailing slash truncation
 

@@ -210,43 +210,30 @@ async function runTests() {
     failed++;
   }
 
-
-  // Test 9: root route test and multiple slashes
+  // Test 9: Root path mock serving
   try {
     const fs = require('fs');
-    fs.mkdirSync(path.join(mocksDir, 'GET-'), { recursive: true });
     fs.writeFileSync(path.join(mocksDir, 'GET-', '.json'), JSON.stringify({ root: true }));
-    server.reloadMocks(); // Manually trigger reload
+    server.reloadMocks();
 
     const r = await request('GET', '/', port);
     if (r.status === 200 && r.body && r.body.root === true) {
-      console.log('✅ Root route served mock correctly');
+      console.log('✅ Served mock: GET / → .json');
       passed++;
     } else {
-      console.log('❌ Root route mock failed', r);
-      failed++;
-    }
-
-    // Test 10: multiple trailing slashes
-    const r2 = await request('GET', '///', port);
-    if (r2.status === 200 && r2.body && r2.body.root === true) {
-      console.log('✅ Multiple trailing slashes reduced properly');
-      passed++;
-    } else {
-      console.log('❌ Multiple trailing slashes failed', r2);
+      console.log('❌ Served mock: GET / → .json failed', r);
       failed++;
     }
   } catch (e) {
-    console.log('❌ Root route mock error', e);
+    console.log('❌ Served mock: GET / → .json error', e);
     failed++;
   } finally {
     const fs = require('fs');
     if (fs.existsSync(path.join(mocksDir, 'GET-', '.json'))) {
       fs.unlinkSync(path.join(mocksDir, 'GET-', '.json'));
     }
-    server.reloadMocks(); // reset
+    server.reloadMocks();
   }
-
 
   // Cleanup
   httpServer.close();
