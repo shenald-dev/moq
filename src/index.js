@@ -386,7 +386,7 @@ class MoqServer {
     }
 
     const reqPath = req.originalUrl || req.url;
-    const targetPath = (this.proxyBasePath.endsWith('/') ? this.proxyBasePath.slice(0, -1) : this.proxyBasePath) + (reqPath.charCodeAt(0) === 47 ? reqPath : `/${reqPath}`);
+    const targetPath = this.proxyBasePath + (reqPath.charCodeAt(0) === 47 ? reqPath : `/${reqPath}`);
 
     const transport = this.proxyIsHttps ? https : http;
     const options = {
