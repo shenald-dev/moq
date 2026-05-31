@@ -15,7 +15,6 @@ class MoqServer {
   _trimTrailingSlashes(str) {
     if (str.length === 0) return str;
     let j = str.length - 1;
-    // Condition j > 0 ensures we preserve at least one character (e.g. root path "/")
     while (j > 0 && str.charCodeAt(j) === 47) j--;
     return j === str.length - 1 ? str : str.slice(0, j + 1);
   }
