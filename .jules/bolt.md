@@ -676,6 +676,10 @@ We are given a merge conflict in the file `.jules/bolt.md`.
         ... [
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+
+2024-05-24 — Correctness Fix for Root Path Proxy and Mocking
+Learning: Custom string manipulation loops meant to trim trailing characters (e.g., slashes) can unintentionally swallow root paths ("/") if their termination condition evaluates entirely down to index 0. This caused `moq` to reduce root paths to empty strings (`""`), breaking standard HTTP serving and upstream routing proxy targets.
+Action: Always ensure manual string traversals for paths preserve at least the first character (`j > 0` instead of `j >= 0`) so root directories remain valid.
 ## 2024-05-17 — Fix Root Path Trimming
 2026-05-18 — Fix correctness bug where trimming trailing slashes cleared root path routing
 Learning: The string trailing slash trimming algorithm `while (j >= 0 && str.charCodeAt(j) === 47) j--;` would completely exhaust a root path `'/'` string and reduce it to `""`. This prevented proper resolution of `GET-/.json` for `GET /`. The fix is simple: ensure at least one character is preserved by changing the loop condition to `j > 0`.
