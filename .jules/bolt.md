@@ -677,6 +677,15 @@ We are given a merge conflict in the file `.jules/bolt.md`.
         ... [
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+## 2024-05-18 — Root Path Trimming Fix
+
+Learning:
+The custom string trimming function `_trimTrailingSlashes` reduced the root path (`/`) to an empty string (`""`) because the loop condition `j >= 0` evaluated and decremented past the first character. This causes bugs when resolving the root path, breaking proxy functionality where `this.proxyBasePath` incorrectly becomes empty instead of retaining the root `/` character.
+
+Action:
+Ensure loop conditions in custom string manipulation algorithms account for retaining at least one character when necessary. In `_trimTrailingSlashes`, changing the condition from `j >= 0` to `j > 0` ensures the root path `/` is returned correctly without trimming it entirely.
+
+## 2024-05-21 — Prevent Double Slashes in Proxy Paths
 2024-05-13 — Fix root slash path mapping bug
 Learning: The custom `_trimTrailingSlashes` function reduced root paths (`/`) to empty strings, which breaks route mapping for the root level. When stripping trailing slashes manually via looping `charCodeAt`, the loop condition must enforce `> 0` instead of `>= 0` to preserve the first character.
 Action: Always verify manual string manipulation loop boundaries, particularly when stripping paths or normalising paths to ensure at least the root path `/` is returned correctly instead of `""`.
@@ -734,6 +743,7 @@ When constructing proxied upstream paths via string concatenation, if the config
 
 Action:
 Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
+
 ## 2024-05-14 — Fix trailing slash removal logic to preserve root paths
 
 Learning:
