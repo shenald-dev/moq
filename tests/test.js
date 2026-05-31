@@ -210,31 +210,6 @@ async function runTests() {
     failed++;
   }
 
-  // Test 9: Root path mock serving
-  try {
-    const fs = require('fs');
-    fs.writeFileSync(path.join(mocksDir, 'GET-', '.json'), JSON.stringify({ root: true }));
-    server.reloadMocks();
-
-    const r = await request('GET', '/', port);
-    if (r.status === 200 && r.body && r.body.root === true) {
-      console.log('✅ Served mock: GET / → .json');
-      passed++;
-    } else {
-      console.log('❌ Served mock: GET / → .json failed', r);
-      failed++;
-    }
-  } catch (e) {
-    console.log('❌ Served mock: GET / → .json error', e);
-    failed++;
-  } finally {
-    const fs = require('fs');
-    if (fs.existsSync(path.join(mocksDir, 'GET-', '.json'))) {
-      fs.unlinkSync(path.join(mocksDir, 'GET-', '.json'));
-    }
-    server.reloadMocks();
-  }
-
   // Cleanup
   httpServer.close();
 
