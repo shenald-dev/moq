@@ -8,6 +8,117 @@ We are given a merge conflict in CHANGELOG.md between base (master) and head (PR
   * Executed safe minor and patch dependency bumps.
   * Maintained test suite passing with 100% success rate.
 
+
+## v0.2.16
+
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the proxyBasePath optimization.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
+
+## v0.2.15
+
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the proxy double-slash path concatenation fix for root proxy targets.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
+
+## v0.2.13
+
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the static payload optimization replacing Express res.send with native Buffer serving.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
+## v0.2.12
+
+* **Performance:** Replaced `app.all('*')` with `app.use()` for the primary routing handler, bypassing regex compilation overhead and increasing baseline request throughput.
+* **Lifecycle / Maintenance:**
+  * Executed safe dependency updates.
+  * Verified structural soundness of the routing optimization.
+
+## v0.2.8
+
+* **Performance:** Replaced redundant `.has()` followed by `.get()` calls on `Map` collections (e.g., `mockDataCache`, `routeCache`) with a single `.get()` call and a truthiness check, halving the number of dictionary searches required during routing and mock data retrieval.
+* **Lifecycle / Maintenance:**
+  * Updated dependencies with safe minor/patch versions (`nodemon`, `chokidar`, `express`, `yargs`).
+  * Validated structural soundness and observability of the codebase post-optimization.
+
+## v0.2.7
+
+* **Security:**
+  * Fixed deep URL-encoded directory traversal vulnerabilities by limiting decoding depth to 5 loops, preventing DoS and bypasses.
+* **Lifecycle / Maintenance:**
+  * Validated the security fix and regressions via adversarial QA. Test suite passed.
+  * Packaged release v0.2.7 and executed safe dependency updates.
+
+## v0.2.6
+
+* **Performance:**
+  * Optimized dynamic route matching by evaluating and decoding route segments exactly once per request, rather than repeatedly inside the candidate evaluation loop.
+* **Lifecycle / Maintenance:**
+  * Verified stability of routing optimization via test suite execution. No new dead code found to prune.
+  * Packaged release v0.2.6.
+
+## v0.2.5
+
+* **Security:**
+  * Fixed double URL-encoded directory traversal vulnerabilities.
+* **Lifecycle / Maintenance:**
+  * Verified structural soundness and tests. Applied safe patch release.
+
+## v0.2.4
+
+* **Enhancements:**
+  * Optimized hot-reloads to run batched memory reads via chokidar using `ignoreInitial: true` and debounced reloading via `scheduleReload()`.
+* **Lifecycle / Maintenance:**
+  * Pruned redundant `findMockFile` wrapper function from `src/index.js`, simplifying class complexity.
+
+## v0.2.3
+
+* **Lifecycle / Maintenance:**
+  * Pruned unused `supertest` dependency from `devDependencies`.
+  * Updated documentation to cover the new `/_health` endpoint.
+  * Bumped patch versions for dependencies to address maintenance.
+
+## v0.2.2
+
+* **Lifecycle / Maintenance:**
+  * Pruned deprecated `url.resolve` usage in favor of modern `new URL()` to clean up the codebase.
+
+## v0.2.1
+
+* **Lifecycle / Maintenance:**
+  * Pruned dead and unreferenced code (`hasMock`) from `src/index.js`.
+  * Recreated the missing `bin/cli.js` entrypoint needed by `pkg` to compile binary correctly.
+
+## v0.2.0
+
+* **Lifecycle / Maintenance:**
+  * Removed dead code (`hasMock`, `matchDynamic`, `normalizePath`) to clean up the codebase.
+  * Pruned fake Go artifacts (`Makefile` and `Dockerfile`) and updated `README.md` to reflect the actual Node.js tech stack.
+* **Bug Fixes:**
+  * Adopted async reads `fs.promises` instead of `fs.readFileSync` for non-blocking I/O file cache misses.
+  * Explicitly block `..` and `%2e%2e` directory traversal for security.
+  * Properly initialized `httpAgent` and `httpsAgent` once to use persistent TCP connection pooling in Proxy Mode.
+  * Resolved redundant imports for `http`/`https` causing SyntaxErrors.
+* **Enhancements:**
+  * `routeCache` Optimizations using an `O(1)` Map instead of `O(N)` loop on dynamic string matching.
+
+## v0.1.0
+
+* Initial release.
+
+## v0.2.9
+
+* **Quality Assurance / Lifecycle:**
+  * Assessed previous agent's optimizations. No dead code pruned.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
+## v0.2.14
 ## v0.2.13
 
 * **Quality Assurance / Lifecycle:**
