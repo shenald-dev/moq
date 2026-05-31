@@ -677,6 +677,13 @@ We are given a merge conflict in the file `.jules/bolt.md`.
         ... [
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+## 2024-05-14 — Fix trailing slash removal logic to preserve root paths
+
+Learning:
+In custom string manipulation functions like `_trimTrailingSlashes` where characters are stripped from the end (e.g., removing trailing slashes), the loop condition must be carefully bounded. A condition like `j >= 0` will consume every character if they all match, effectively reducing the root path `"/"` to an empty string `""`, which breaks mapping expectations for root endpoints.
+
+Action:
+Ensure custom string trimming loops explicitly preserve at least one character when modifying paths by setting the condition to `j > 0` (or returning early if the string is exactly `"/"`). This correctly normalizes `"//"` down to `"/"` without accidentally producing an empty string.
 
 ## 2024-05-19 — Prevent Root Paths from Being Reduced to Empty Strings in Hot Path Slicing
 
@@ -709,6 +716,13 @@ Custom string manipulation loops (like `_trimTrailingSlashes`) using loop condit
 
 Action:
 When writing custom string manipulation loops to trim trailing characters (e.g. slashes), ensure loop conditions (such as using `j > 0` instead of `j >= 0`) preserve at least one character to prevent root paths from being incorrectly destroyed.
+## 2024-05-14 — Fix trailing slash removal logic to preserve root paths
+
+Learning:
+In custom string manipulation functions like `_trimTrailingSlashes` where characters are stripped from the end (e.g., removing trailing slashes), the loop condition must be carefully bounded. A condition like `j >= 0` will consume every character if they all match, effectively reducing the root path `"/"` to an empty string `""`, which breaks mapping expectations for root endpoints.
+
+Action:
+Ensure custom string trimming loops explicitly preserve at least one character when modifying paths by setting the condition to `j > 0` (or returning early if the string is exactly `"/"`). This correctly normalizes `"//"` down to `"/"` without accidentally producing an empty string.
 ## $(date +%Y-%m-%d) — Prevent Double Slashes in Proxy Paths
 
 Learning:
@@ -716,6 +730,13 @@ When constructing proxied upstream paths via string concatenation, if the config
 
 Action:
 Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
+## 2024-05-14 — Fix trailing slash removal logic to preserve root paths
+
+Learning:
+In custom string manipulation functions like `_trimTrailingSlashes` where characters are stripped from the end (e.g., removing trailing slashes), the loop condition must be carefully bounded. A condition like `j >= 0` will consume every character if they all match, effectively reducing the root path `"/"` to an empty string `""`, which breaks mapping expectations for root endpoints.
+
+Action:
+Ensure custom string trimming loops explicitly preserve at least one character when modifying paths by setting the condition to `j > 0` (or returning early if the string is exactly `"/"`). This correctly normalizes `"//"` down to `"/"` without accidentally producing an empty string.
 
 ## $(date +%Y-%m-%d) — Optimize Proxy Request Path Construction Hot Path
 
@@ -739,6 +760,13 @@ String operations like `.endsWith('/')` and `.slice(0, -1)` inside hot paths (e.
 
 Action:
 Pre-parse and normalize configuration paths (like `proxyBasePath` to `''` instead of `'/'`) during initialization in constructors, allowing the hot path to safely concatenate strings without runtime conditional trimming.
+## 2024-05-14 — Fix trailing slash removal logic to preserve root paths
+
+Learning:
+In custom string manipulation functions like `_trimTrailingSlashes` where characters are stripped from the end (e.g., removing trailing slashes), the loop condition must be carefully bounded. A condition like `j >= 0` will consume every character if they all match, effectively reducing the root path `"/"` to an empty string `""`, which breaks mapping expectations for root endpoints.
+
+Action:
+Ensure custom string trimming loops explicitly preserve at least one character when modifying paths by setting the condition to `j > 0` (or returning early if the string is exactly `"/"`). This correctly normalizes `"//"` down to `"/"` without accidentally producing an empty string.
 2024-05-15 — Fix Root Path Resolution Bug
 Learning: In custom string parsing loops, condition bounds are critical. When reducing strings via trailing character checks (e.g., removing trailing slashes), the loop must ensure it does not exhaust the entire string if the string consists entirely of that character (like the root path `/`), otherwise it incorrectly reduces to an empty string, breaking subsequent file path resolution logic.
 Action: Always verify loop conditions that strip characters preserve base paths. Ensure root path (`/`) resolution has dedicated test coverage to prevent regression in string manipulation utilities.

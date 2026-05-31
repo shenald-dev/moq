@@ -15,6 +15,7 @@ class MoqServer {
   _trimTrailingSlashes(str) {
     if (str.length === 0) return str;
     let j = str.length - 1;
+    // Stop at j > 0 to preserve the root slash (i.e. "/") so it isn't reduced to an empty string.
     while (j > 0 && str.charCodeAt(j) === 47) j--;
     return j === str.length - 1 ? str : str.slice(0, j + 1);
   }
@@ -386,7 +387,7 @@ class MoqServer {
     }
 
     const reqPath = req.originalUrl || req.url;
-    const targetPath = (this.proxyBasePath.endsWith('/') ? this.proxyBasePath.slice(0, -1) : this.proxyBasePath) + (reqPath.charCodeAt(0) === 47 ? reqPath : `/${reqPath}`);
+    const targetPath = this.proxyBasePath + (reqPath.charCodeAt(0) === 47 ? reqPath : `/${reqPath}`);
 
     const transport = this.proxyIsHttps ? https : http;
     const options = {

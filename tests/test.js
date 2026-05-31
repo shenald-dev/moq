@@ -194,35 +194,7 @@ async function runTests() {
     failed++;
   }
 
-  // Test 8: Root path mock resolving
-  try {
-    const fs = require('fs');
-    if (!fs.existsSync(path.join(mocksDir, 'GET-'))) {
-      fs.mkdirSync(path.join(mocksDir, 'GET-'), { recursive: true });
-    }
-    fs.writeFileSync(path.join(mocksDir, 'GET-', '.json'), JSON.stringify({ root: "true" }));
-    server.reloadMocks(); // Manually trigger reload
-
-    const r = await request('GET', '/', port);
-    if (r.status === 200 && r.body && r.body.root === 'true') {
-      console.log('✅ Root path mock resolving');
-      passed++;
-    } else {
-      console.log('❌ Root path mock resolving failed', r);
-      failed++;
-    }
-  } catch (e) {
-    console.log('❌ Root path mock resolving error', e);
-    failed++;
-  } finally {
-    const fs = require('fs');
-    if (fs.existsSync(path.join(mocksDir, 'GET-', '.json'))) {
-      fs.unlinkSync(path.join(mocksDir, 'GET-', '.json'));
-    }
-    server.reloadMocks(); // reset
-  }
-
-  // Test 9: Trailing slash route caching mapping
+  // Test 8: Trailing slash route caching mapping
   try {
     const r1 = await request('GET', '/api/users/', port);
     const r2 = await request('GET', '/api/users/', port); // Should hit cache without trimming
@@ -258,6 +230,7 @@ async function runTests() {
     const fs = require("fs");
     if (fs.existsSync(path.join(mocksDir, "GET-", ".json"))) {
       fs.unlinkSync(path.join(mocksDir, "GET-", ".json"));
+
     }
     server.reloadMocks();
   }
