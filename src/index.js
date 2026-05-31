@@ -15,7 +15,7 @@ class MoqServer {
   _trimTrailingSlashes(str) {
     if (str.length === 0) return str;
     let j = str.length - 1;
-    while (j >= 0 && str.charCodeAt(j) === 47) j--;
+    while (j > 0 && str.charCodeAt(j) === 47) j--;
     return j === str.length - 1 ? str : str.slice(0, j + 1);
   }
 
@@ -32,7 +32,8 @@ class MoqServer {
         this.proxyIsHttps = parsed.protocol === 'https:';
         this.proxyHostname = parsed.hostname;
         this.proxyPort = parsed.port || (this.proxyIsHttps ? 443 : 80);
-        this.proxyBasePath = this._trimTrailingSlashes(parsed.pathname);
+        const trimmed = this._trimTrailingSlashes(parsed.pathname);
+        this.proxyBasePath = trimmed === '/' ? '' : trimmed;
         this.parsedProxyTarget = true;
       } catch (err) {
         console.error(`Invalid proxy target URL in options: ${this.proxyTarget}`);
