@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.2.15
+
+* **Performance:** Pre-computed proxyBasePath for faster hot path routing.
+* **Lifecycle / Maintenance:**
+## [0.2.15] - $(date +%Y-%m-%d)
+
+### Performance
+- Optimized proxyBasePath concatenation on hot path to avoid per-request `endsWith()` and `slice()` operations.
+## v0.2.18
+
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the codebase following recent optimizations.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
+
 ## v0.2.17
 
 * **Quality Assurance / Lifecycle:**
