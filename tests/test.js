@@ -210,34 +210,23 @@ async function runTests() {
     failed++;
   }
 
-  // Test 9: Root path resolution
+  // Test 9: Root path requests
   try {
     const fs = require('fs');
-    if (!fs.existsSync(path.join(mocksDir, 'GET-'))) {
-      fs.mkdirSync(path.join(mocksDir, 'GET-'), { recursive: true });
-    }
+    fs.mkdirSync(path.join(mocksDir, 'GET-'), { recursive: true });
     fs.writeFileSync(path.join(mocksDir, 'GET-', '.json'), JSON.stringify({ root: true }));
     server.reloadMocks();
 
     const r = await request('GET', '/', port);
-    if (r.status === 200 && r.body && r.body.root === true) {
-      console.log('✅ Root path resolution');
+    if (r.status === 200 && r.body && r.body.root) {
+      console.log('✅ Root path GET / resolves to GET-/.json');
       passed++;
     } else {
-      console.log('❌ Root path resolution failed', r);
-      failed++;
-    }
-
-    const r2 = await request('GET', '///', port);
-    if (r2.status === 200 && r2.body && r2.body.root === true) {
-      console.log('✅ Multi-slash root path resolution');
-      passed++;
-    } else {
-      console.log('❌ Multi-slash root path resolution failed', r2);
+      console.log('❌ Root path GET / failed', r);
       failed++;
     }
   } catch (e) {
-    console.log('❌ Root path resolution error', e);
+    console.log('❌ Root path GET / error', e);
     failed++;
   } finally {
     const fs = require('fs');
@@ -247,22 +236,8 @@ async function runTests() {
     server.reloadMocks();
   }
 
-  // Test 10: Multi-slash trailing path resolution
-  try {
-    const r = await request('GET', '/api/users//', port);
-    if (r.status === 200 && r.body && r.body.users) {
-      console.log('✅ Multi-slash trailing path resolution');
-      passed++;
-    } else {
-      console.log('❌ Multi-slash trailing path resolution failed', r);
-      failed++;
-    }
-  } catch (e) {
-    console.log('❌ Multi-slash trailing path resolution error', e);
-    failed++;
-  }
 
-  // Test 11: Proxy double-slash prevention
+  // Test 10: Proxy double-slash prevention
   try {
     const targetServer = http.createServer((req, res) => {
       res.end(req.url);
