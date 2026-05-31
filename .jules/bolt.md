@@ -677,6 +677,10 @@ We are given a merge conflict in the file `.jules/bolt.md`.
         ... [
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
+2024-05-13 — Fix root slash path mapping bug
+Learning: The custom `_trimTrailingSlashes` function reduced root paths (`/`) to empty strings, which breaks route mapping for the root level. When stripping trailing slashes manually via looping `charCodeAt`, the loop condition must enforce `> 0` instead of `>= 0` to preserve the first character.
+Action: Always verify manual string manipulation loop boundaries, particularly when stripping paths or normalising paths to ensure at least the root path `/` is returned correctly instead of `""`.
+
 ## 2024-05-14 — Fix trailing slash removal logic to preserve root paths
 
 Learning:
