@@ -4,6 +4,13 @@
 
 ### Performance
 - Optimized proxyBasePath concatenation on hot path to avoid per-request `endsWith()` and `slice()` operations.
+## v0.2.18
+
+* **Quality Assurance / Lifecycle:**
+  * Verified structural integrity of the codebase following recent optimizations.
+  * Executed safe minor and patch dependency bumps.
+  * Maintained test suite passing with 100% success rate.
+
 
 ## v0.2.17
 
@@ -12,12 +19,14 @@
   * Executed safe minor and patch dependency bumps.
   * Maintained test suite passing with 100% success rate.
 
+
 ## v0.2.16
 
 * **Quality Assurance / Lifecycle:**
   * Verified structural integrity of the proxyBasePath optimization.
   * Executed safe minor and patch dependency bumps.
   * Maintained test suite passing with 100% success rate.
+
 
 ## v0.2.15
 
