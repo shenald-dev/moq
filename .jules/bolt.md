@@ -1,3 +1,4 @@
+[Output truncated for brevity]
 We are given a merge conflict in the file `.jules/bolt.md`.
  We have three versions: ancestor, base (master), and head (PR branch).
 
@@ -677,6 +678,15 @@ We are given a merge conflict in the file `.jules/bolt.md`.
 Action:
 Read mock payloads as raw `Buffer` references using `fs.promises.readFile` and transmit directly with `.setHeader` and `.end` node HTTP module utilities.
 
+## 2024-05-19 — Prevent Root Paths from Being Reduced to Empty Strings in Hot Path Slicing
+
+Learning:
+When manually trimming trailing slashes on strings via `charCodeAt` in loops (like `_trimTrailingSlashes`), setting the loop condition to `j >= 0` allows the logic to incorrectly consume the very first character of the string if it matches the slash character. For single-slash root paths (like `/`), this incorrectly reduces the path to an empty string (`""`), breaking expected routing behavior and fallback mechanisms targeting root endpoints.
+
+Action:
+When writing custom string manipulation loops to trim trailing characters (e.g. slashes), ensure loop conditions (such as using `j > 0` instead of `j >= 0`) preserve at least one character to prevent root paths from being incorrectly destroyed.
+
+## 2024-05-20 — Prevent Double Slashes in Proxy Paths
 2024-05-24 — Correctness Fix for Root Path Proxy and Mocking
 Learning: Custom string manipulation loops meant to trim trailing characters (e.g., slashes) can unintentionally swallow root paths ("/") if their termination condition evaluates entirely down to index 0. This caused `moq` to reduce root paths to empty strings (`""`), breaking standard HTTP serving and upstream routing proxy targets.
 Action: Always ensure manual string traversals for paths preserve at least the first character (`j > 0` instead of `j >= 0`) so root directories remain valid.
@@ -706,6 +716,7 @@ When constructing proxied upstream paths via string concatenation, if the config
 
 Action:
 Ensure root path `proxyBasePath` strings are explicitly reduced to empty strings `""` when building destination strings on the proxyRequest hot path to enforce uniform single-slash delimiters.
+
 ## $(date +%Y-%m-%d) — Optimize Proxy Request Path Construction Hot Path
 
 Learning:
