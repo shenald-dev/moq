@@ -12,5 +12,22 @@
     "vulnerabilities_high": 0,
     "branches_deleted": 0,
     "blockers": []
+  },
+  "warden": {
+    "qa_status": "amended",
+    "dead_code_removed_lines": 15,
+    "dependencies_bumped": [
+      "express: current -> latest_patch (ROLLED BACK)",
+      "semver: current -> latest_patch (ROLLED BACK)"
+    ],
+    "security_critical": 1,
+    "security_high": 1,
+    "security_medium": 0,
+    "security_low": 1,
+    "docs_updated": [
+      "CHANGELOG.md"
+    ],
+    "release_version": "0.2.18",
+    "blockers": []
   }
 }

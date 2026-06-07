@@ -166,3 +166,14 @@ No dead code was produced by previous agent.
 
 Alignment / Deferred:
 Applied safe minor and patch dependency bumps. Deferred major framework updates. Version bumped to v0.2.18.
+
+## 2026-06-07 — WARDEN Run
+
+QA Status: amended
+Dead Code Removed: 15 lines
+Dependencies Bumped: 2
+Security: Critical=1, High=1
+Docs Updated: CHANGELOG.md
+Release: 0.2.18
+
+AI Summary: Repository is stable with passing CI. Recent commits focused on root path routing fixes and README overhaul. No dead code identified for removal (fix-conflict.js is likely a CI utility, node_modules entries are false positives). Applied safe patch dependency bumps for express and semver. Running tests and security audit to verify integrity. Bumping to v0.2.18 with updated CHANGELOG.
