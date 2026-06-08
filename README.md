@@ -1,3 +1,4 @@
+# README.md
 <div align="center">
   <img src="assets/logo.png" alt="moq Logo" width="250" />
   
@@ -48,36 +49,14 @@ No YAML configuration, no complex routing files. Just drop JSON files in a folde
 ### 1. Installation
 
 Install globally to use anywhere on your system:
-```bash
-npm install -g moq-server
-```
-
 Or run dynamically without installing:
-```bash
-npx moq-server
-```
-
 ### 2. Setup your Mocks
 
 Create a `mocks` folder in your project root and drop some JSON files inside.
-```bash
-mkdir -p mocks/api/users
-echo '{"id": 1, "name": "Shenald"}' > mocks/api/users/profile.json
-```
-
 ### 3. Run the Server
-
-```bash
-moq
-```
 *The server will spin up on `http://localhost:4000`.*
 
 Now simply fetch your mock!
-```bash
-curl http://localhost:4000/api/users/profile
-# Returns: {"id": 1, "name": "Shenald"}
-```
-
 ---
 
 ## 💻 Comprehensive Usage
@@ -91,9 +70,18 @@ You can customize the server behavior on startup:
 - `--delay, -t`: Add simulated network latency in milliseconds (e.g., `-t 500`).
 
 **Example:**
-```bash
-moq --port 8080 --dir ./api-responses --delay 1000
-```
+### 🛣️ Routing & URL Handling
+
+**Root Path & Index Files**
+The server automatically maps `index.json` files to their respective directory paths. 
+- The root path (`/`) is mapped to `mocks/index.json`.
+- Nested directories follow the same rule (e.g., `mocks/api/index.json` maps to `/api`).
+
+If you need to serve a specific payload or health check at the root of your API, simply create an `index.json` file in your mock directory:
+*Note: If no `index.json` is present at the root, the server will return a default welcome JSON payload.*
+
+**Trailing Slash Normalization**
+To ensure consistent API behavior and prevent unexpected 404 errors, `moq` automatically normalizes trailing slashes. Whether your frontend requests `/api/users` or `/api/users/`, the server will seamlessly resolve the route to the correct mock file (e.g., `mocks/api/users.json` or `mocks/api/users/index.json`). Strict trailing slash matching is disabled by default to provide a forgiving development experience.
 
 ---
 
@@ -101,8 +89,4 @@ moq --port 8080 --dir ./api-responses --delay 1000
 
 We welcome contributions to make mocking even faster!
 
-- 🐛 **Found a bug?** Open an issue.
-- ✨ **Have a feature idea?** Submit a PR (e.g., adding dynamic JS resolution).
-
----
-> *Built by a Vibe Coder. Keep your flow state unbroken.*
+-
