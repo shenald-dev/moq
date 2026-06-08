@@ -15,13 +15,17 @@
   },
   "warden": {
     "qa_status": "amended",
-    "dead_code_removed_lines": 0,
-    "dependencies_bumped": [],
+    "dead_code_removed_lines": 2,
+    "dependencies_bumped": [
+      "all: current -> latest-compatible (ROLLED BACK)"
+    ],
     "security_critical": 1,
     "security_high": 1,
     "security_medium": 0,
     "security_low": 1,
-    "docs_updated": [],
+    "docs_updated": [
+      "README.md"
+    ],
     "release_version": null,
     "blockers": []
   }
