@@ -14,16 +14,14 @@
     "blockers": []
   },
   "warden": {
-    "qa_status": "amended",
+    "qa_status": "verified",
     "dead_code_removed_lines": 0,
     "dependencies_bumped": [],
-    "security_critical": 1,
-    "security_high": 1,
+    "security_critical": 0,
+    "security_high": 0,
     "security_medium": 0,
-    "security_low": 1,
-    "docs_updated": [
-      "README.md"
-    ],
+    "security_low": 0,
+    "docs_updated": [],
     "release_version": null,
     "blockers": []
   }
