@@ -77,6 +77,11 @@ async function runTests() {
 
   // Test 2: mock served
   try {
+    if (!require('fs').existsSync(path.join(mocksDir, 'api'))) {
+      require('fs').mkdirSync(path.join(mocksDir, 'api'), { recursive: true });
+    }
+    require('fs').writeFileSync(path.join(mocksDir, 'api', 'users.json'), JSON.stringify({ users: [] }));
+    server.reloadMocks();
     const r = await request('GET', '/api/users', port);
     if (r.status === 200 && r.body && r.body.users) {
       console.log('✅ Mock GET /api/users');
@@ -132,6 +137,11 @@ async function runTests() {
 
   // Test 5: dynamic route mock served
   try {
+    if (!require('fs').existsSync(path.join(mocksDir, 'api', 'users'))) {
+      require('fs').mkdirSync(path.join(mocksDir, 'api', 'users'), { recursive: true });
+    }
+    require('fs').writeFileSync(path.join(mocksDir, 'api', 'users', ':id.json'), JSON.stringify({ id: 123 }));
+    server.reloadMocks();
     const r = await request('GET', '/api/users/123', port);
     if (r.status === 200 && r.body && r.body.id === 123) {
       console.log('✅ Dynamic Mock GET /api/users/123');
@@ -148,12 +158,17 @@ async function runTests() {
   // Test 5.1: dynamic route specificity priority
   try {
     const fs = require('fs');
-    if (!fs.existsSync(path.join(mocksDir, 'GET-', 'api', ':type'))) {
-      fs.mkdirSync(path.join(mocksDir, 'GET-', 'api', ':type'), { recursive: true });
+    if (!require('fs').existsSync(path.join(mocksDir, 'api', ':type'))) {
+      require('fs').mkdirSync(path.join(mocksDir, 'api', ':type'), { recursive: true });
     }
-    fs.writeFileSync(path.join(mocksDir, 'GET-', 'api', ':type', ':id.json'), JSON.stringify({ wildcard: true }));
+    require('fs').writeFileSync(path.join(mocksDir, 'api', ':type', ':id.json'), JSON.stringify({ wildcard: true }));
     server.reloadMocks();
 
+    if (!require('fs').existsSync(path.join(mocksDir, 'api', 'users'))) {
+      require('fs').mkdirSync(path.join(mocksDir, 'api', 'users'), { recursive: true });
+    }
+    require('fs').writeFileSync(path.join(mocksDir, 'api', 'users', ':id.json'), JSON.stringify({ id: 123 }));
+    server.reloadMocks();
     const r = await request('GET', '/api/users/123', port);
     if (r.status === 200 && r.body && r.body.id === 123 && !r.body.wildcard) {
       console.log('✅ Dynamic Mock specificity matches exact over wildcard');
@@ -167,7 +182,7 @@ async function runTests() {
     failed++;
   } finally {
     const fs = require('fs');
-    fs.rmSync(path.join(mocksDir, 'GET-', 'api', ':type'), { recursive: true, force: true });
+    require('fs').rmSync(path.join(mocksDir, 'api', ':type'), { recursive: true, force: true });
     server.reloadMocks();
   }
 
@@ -203,6 +218,9 @@ async function runTests() {
 
   // Test 8: Trailing slash route caching mapping
   try {
+    if (!require('fs').existsSync(path.join(mocksDir, 'api'))) require('fs').mkdirSync(path.join(mocksDir, 'api'), { recursive: true });
+    require('fs').writeFileSync(path.join(mocksDir, 'api', 'users.json'), JSON.stringify({ users: [] }));
+    server.reloadMocks();
     const r1 = await request('GET', '/api/users/', port);
     const r2 = await request('GET', '/api/users/', port); // Should hit cache without trimming
     if (r1.status === 200 && r1.body && r1.body.users && r2.status === 200 && r2.body && r2.body.users) {
@@ -219,8 +237,7 @@ async function runTests() {
 
   try {
     const fs = require("fs");
-    fs.mkdirSync(path.join(mocksDir, "GET-"), { recursive: true });
-    fs.writeFileSync(path.join(mocksDir, "GET-", ".json"), JSON.stringify({ root: true }));
+    require('fs').writeFileSync(path.join(mocksDir, ".json"), JSON.stringify({ root: true }));
     server.reloadMocks();
     const r = await request("GET", "/", port);
     if (r.status === 200 && r.body && r.body.root) {
@@ -235,8 +252,8 @@ async function runTests() {
     failed++;
   } finally {
     const fs = require("fs");
-    if (fs.existsSync(path.join(mocksDir, "GET-", ".json"))) {
-      fs.unlinkSync(path.join(mocksDir, "GET-", ".json"));
+    if (require('fs').existsSync(path.join(mocksDir, ".json"))) {
+      require('fs').unlinkSync(path.join(mocksDir, ".json"));
     }
     server.reloadMocks();
   }
