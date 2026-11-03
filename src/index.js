@@ -201,10 +201,27 @@ class MoqServer {
 
     this.getMockFiles(); // ensure caches are populated
     const exactMatchPath = `${method}-${decodedRoute}.json`;
+    const defaultGetPath = `${decodedRoute}.json`;
+    const exactMatchPathNoLeadingSlash = `${method}${decodedRoute}.json`;
+    const defaultGetPathNoLeadingSlash = `${decodedRoute.slice(1)}.json`;
 
-    // Fast path: exact match in set
+    // The decodedRoute starts with a slash, e.g. `/api/users`.
+    // The readDirRecursive output returns relative paths like `api/users.json`.
+    // We should check both.
+
+    let matchedPath = null;
     if (this.mockFilesSet.has(exactMatchPath)) {
-      const p = path.join(this.mocksDir, exactMatchPath);
+      matchedPath = exactMatchPath;
+    } else if (this.mockFilesSet.has(`${method}-${decodedRoute.slice(1)}.json`)) {
+      matchedPath = `${method}-${decodedRoute.slice(1)}.json`;
+    } else if (method === 'GET' && this.mockFilesSet.has(defaultGetPath)) {
+      matchedPath = defaultGetPath;
+    } else if (method === 'GET' && this.mockFilesSet.has(defaultGetPathNoLeadingSlash)) {
+      matchedPath = defaultGetPathNoLeadingSlash;
+    }
+
+    if (matchedPath) {
+      const p = path.join(this.mocksDir, matchedPath);
       this.routeCache.set(cacheKey, p);
       return p;
     }
@@ -279,11 +296,25 @@ class MoqServer {
 
     this.dynamicRoutes = new Map();
     for (const file of this.mockFilesCache) {
-      const methodEnd = file.indexOf('-');
-      if (methodEnd === -1 || !file.endsWith('.json')) continue;
+      if (!file.endsWith('.json')) continue;
 
-      const method = file.slice(0, methodEnd);
-      const fileRoute = file.slice(methodEnd + 1, -5);
+      const basename = require('path').basename(file);
+      const dirname = require('path').dirname(file);
+      const methodEnd = basename.indexOf('-');
+
+      let method, fileRoute;
+
+      if (methodEnd !== -1 && /^[A-Z]+$/.test(basename.slice(0, methodEnd))) {
+        method = basename.slice(0, methodEnd);
+        const nameWithoutMethod = basename.slice(methodEnd + 1);
+        fileRoute = (dirname === '.' ? '' : dirname + '/') + nameWithoutMethod.slice(0, -5);
+      } else {
+        method = 'GET';
+        fileRoute = file.slice(0, -5);
+      }
+      // Ensure fileRoute always starts with a slash to match route splitting logic
+      fileRoute = '/' + fileRoute;
+
 
       if (fileRoute.includes(':')) {
         const parts = fileRoute.split('/');
