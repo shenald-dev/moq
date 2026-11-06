@@ -202,7 +202,7 @@ class MoqServer {
     this.getMockFiles(); // ensure caches are populated
     const exactMatchPath = `${method}-${decodedRoute}.json`;
     const defaultGetPath = `${decodedRoute}.json`;
-    const exactMatchPathNoLeadingSlash = `${method}${decodedRoute}.json`;
+    const exactMatchPathNoLeadingSlash = `${method}-${decodedRoute.slice(1)}.json`;
     const defaultGetPathNoLeadingSlash = `${decodedRoute.slice(1)}.json`;
 
     // The decodedRoute starts with a slash, e.g. `/api/users`.
@@ -210,14 +210,14 @@ class MoqServer {
     // We should check both.
 
     let matchedPath = null;
-    if (this.mockFilesSet.has(exactMatchPath)) {
+    if (this.mockFilesSet.has(exactMatchPathNoLeadingSlash)) {
+      matchedPath = exactMatchPathNoLeadingSlash;
+    } else if (this.mockFilesSet.has(exactMatchPath)) {
       matchedPath = exactMatchPath;
-    } else if (this.mockFilesSet.has(`${method}-${decodedRoute.slice(1)}.json`)) {
-      matchedPath = `${method}-${decodedRoute.slice(1)}.json`;
-    } else if (method === 'GET' && this.mockFilesSet.has(defaultGetPath)) {
-      matchedPath = defaultGetPath;
     } else if (method === 'GET' && this.mockFilesSet.has(defaultGetPathNoLeadingSlash)) {
       matchedPath = defaultGetPathNoLeadingSlash;
+    } else if (method === 'GET' && this.mockFilesSet.has(defaultGetPath)) {
+      matchedPath = defaultGetPath;
     }
 
     if (matchedPath) {

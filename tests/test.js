@@ -135,6 +135,54 @@ async function runTests() {
     server.reloadMocks(); // reset
   }
 
+  // Test 4.2: POST static route mock fallback prevention
+  try {
+    if (!require('fs').existsSync(path.join(mocksDir, 'api'))) {
+      require('fs').mkdirSync(path.join(mocksDir, 'api'), { recursive: true });
+    }
+    require('fs').writeFileSync(path.join(mocksDir, 'api', 'users.json'), JSON.stringify({ users: [] }));
+
+    // We should remove POST-users.json if it exists from previous tests or manual testing!
+    if (require('fs').existsSync(path.join(mocksDir, 'api', 'POST-users.json'))) {
+      require('fs').unlinkSync(path.join(mocksDir, 'api', 'POST-users.json'));
+    }
+
+    server.reloadMocks();
+    const r = await request('POST', '/api/users', port);
+    if (r.status === 404) {
+      console.log('✅ POST static Mock fallback prevention');
+      passed++;
+    } else {
+      console.log('❌ POST static Mock fallback prevention failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ POST static Mock fallback prevention error', e);
+    failed++;
+  }
+
+
+
+  // Test 4.5: POST dynamic route mock fallback prevention
+  try {
+    if (!require('fs').existsSync(path.join(mocksDir, 'api', 'users'))) {
+      require('fs').mkdirSync(path.join(mocksDir, 'api', 'users'), { recursive: true });
+    }
+    require('fs').writeFileSync(path.join(mocksDir, 'api', 'users', ':id.json'), JSON.stringify({ id: 123 }));
+    server.reloadMocks();
+    const r = await request('POST', '/api/users/123', port);
+    if (r.status === 404) {
+      console.log('✅ POST Dynamic Mock fallback prevention');
+      passed++;
+    } else {
+      console.log('❌ POST Dynamic Mock fallback prevention failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ POST Dynamic Mock fallback prevention error', e);
+    failed++;
+  }
+
   // Test 5: dynamic route mock served
   try {
     if (!require('fs').existsSync(path.join(mocksDir, 'api', 'users'))) {

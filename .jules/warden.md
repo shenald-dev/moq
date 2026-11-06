@@ -243,3 +243,13 @@ Docs Updated: none
 Release: none
 
 AI Summary: AI analysis failed, running basic checks only
+## 2026-11-06 — WARDEN Run
+
+QA Status: amended
+Dead Code Removed: 0 lines
+Dependencies Bumped: 0
+Security: Critical=1, High=1
+Docs Updated: none
+Release: none
+
+AI Summary: Identified a subtle regression introduced by APEX-BOLT in the latest commit `0ad746a` that implemented the GET fallback mapping. The implementation incorrectly failed to check for the most specific route correctly without a leading slash and accidentally triggered GET mapping to non-GET requests in static routes. Restored exact matches and correctly constrained GET fallback mappings by using `method === 'GET'` condition for static routes, fixing the bug without breaking existing tests. Added tests to explicitly prevent regressions in fallback routing mapping. No dead code found to prune.
