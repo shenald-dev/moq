@@ -96,6 +96,7 @@ class MoqServer {
   }
 
   async handleRequest(req, res, next) {
+    this.getMockFiles(); // Ensure mock files cache is ready for resolveMockPath
     // Try to find mock file
     const mockFile = this.resolveMockPath(req.method, req.path);
 
@@ -199,7 +200,6 @@ class MoqServer {
 
     decodedRoute = this._trimTrailingSlashes(decodedRoute);
 
-    this.getMockFiles(); // ensure caches are populated
     const exactMatchPath = `${method}-${decodedRoute}.json`;
     const defaultGetPath = `${decodedRoute}.json`;
     const exactMatchPathNoLeadingSlash = `${method}-${decodedRoute.slice(1)}.json`;
@@ -362,8 +362,8 @@ class MoqServer {
   }
 
   async notFoundHandler(req, res) {
-    this.getMockFiles(); // ensure caches are populated
-    if (this.mockFilesSet.has('404.json')) {
+    // getMockFiles() is already called in handleRequest
+    if (this.mockFilesSet && this.mockFilesSet.has('404.json')) {
       const fallback = path.join(this.mocksDir, '404.json');
       try {
         let contentPromise = this.mockDataCache.get(fallback);
