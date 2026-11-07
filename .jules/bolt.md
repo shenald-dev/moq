@@ -792,3 +792,11 @@ When writing custom string manipulation loops (e.g., stripping trailing slashes 
 
 Action:
 Ensure custom string traversal loops intended to trim characters from the end of a string explicitly preserve at least one character when the character being trimmed constitutes the entire path segment (e.g., by checking `j > 0` instead of `j >= 0`). This ensures root endpoints (`/`) are correctly preserved and mockable.
+
+## $(date +%Y-%m-%d) — Optimize Redundant Cache Population on Hot Path
+
+Learning:
+Multiple calls to `this.getMockFiles()` on the per-request hot path (in `resolveMockPath` and `notFoundHandler`) created unnecessary function call overhead despite fast-path caching.
+
+Action:
+Consolidate cache population by calling `this.getMockFiles()` exactly once at the entry point of the hot path (`handleRequest`) and removing the redundant calls deeper in the request lifecycle.
