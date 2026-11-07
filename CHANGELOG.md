@@ -1,5 +1,10 @@
 # CHANGELOG.md
 
+## [Unreleased]
+* **[Fixed]:** Fixed `exactMatchPathNoLeadingSlash` calculation to resolve `POST-api/users.json` format routing issues.
+* **[Optimized]:** Expanded test coverage to explicitly test non-GET (POST) mock resolutions.
+
+
 ## [0.2.18] - 2026-06-07
 
 - d52dc6f chore(sentinel): update monitoring log
