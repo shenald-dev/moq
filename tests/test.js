@@ -259,6 +259,25 @@ async function runTests() {
   }
 
 
+
+  // Test 9: explicit non-GET routing (e.g. POST-api/users.json)
+  try {
+    if (!require('fs').existsSync(path.join(mocksDir, 'POST-api'))) require('fs').mkdirSync(path.join(mocksDir, 'POST-api'), { recursive: true });
+    require('fs').writeFileSync(path.join(mocksDir, 'POST-api', 'users.json'), JSON.stringify({ postSuccess: true }));
+    server.reloadMocks();
+    const r = await request('POST', '/api/users', port);
+    if (r.status === 200 && r.body && r.body.postSuccess) {
+      console.log('✅ Explicit POST mock /api/users');
+      passed++;
+    } else {
+      console.log('❌ Explicit POST mock failed', r);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ Explicit POST mock error', e);
+    failed++;
+  }
+
   // Test 10: Proxy double-slash prevention
   try {
     const targetServer = http.createServer((req, res) => {
