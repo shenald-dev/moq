@@ -3,6 +3,7 @@
 ## [Unreleased]
 * **[Fixed]:** Fixed `exactMatchPathNoLeadingSlash` calculation to resolve `POST-api/users.json` format routing issues.
 * **[Optimized]:** Expanded test coverage to explicitly test non-GET (POST) mock resolutions.
+* **[Optimized]:** Safely updated minor dependencies via npm update to maintain hygiene and security.
 
 
 ## [0.2.18] - 2026-06-07
