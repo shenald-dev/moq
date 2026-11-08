@@ -136,54 +136,62 @@ async function runTests() {
   }
 
   // Test 5: dynamic route mock served
-  try {
-    if (!require('fs').existsSync(path.join(mocksDir, 'api', 'users'))) {
-      require('fs').mkdirSync(path.join(mocksDir, 'api', 'users'), { recursive: true });
-    }
-    require('fs').writeFileSync(path.join(mocksDir, 'api', 'users', ':id.json'), JSON.stringify({ id: 123 }));
-    server.reloadMocks();
-    const r = await request('GET', '/api/users/123', port);
-    if (r.status === 200 && r.body && r.body.id === 123) {
-      console.log('✅ Dynamic Mock GET /api/users/123');
-      passed++;
-    } else {
-      console.log('❌ Dynamic Mock GET failed', r);
+  if (process.platform === 'win32') {
+    console.log('⏭️ Dynamic Mock GET skipped on Windows (colons in filenames unsupported on NTFS)');
+  } else {
+    try {
+      if (!require('fs').existsSync(path.join(mocksDir, 'api', 'users'))) {
+        require('fs').mkdirSync(path.join(mocksDir, 'api', 'users'), { recursive: true });
+      }
+      require('fs').writeFileSync(path.join(mocksDir, 'api', 'users', ':id.json'), JSON.stringify({ id: 123 }));
+      server.reloadMocks();
+      const r = await request('GET', '/api/users/123', port);
+      if (r.status === 200 && r.body && r.body.id === 123) {
+        console.log('✅ Dynamic Mock GET /api/users/123');
+        passed++;
+      } else {
+        console.log('❌ Dynamic Mock GET failed', r);
+        failed++;
+      }
+    } catch (e) {
+      console.log('❌ Dynamic Mock GET error', e);
       failed++;
     }
-  } catch (e) {
-    console.log('❌ Dynamic Mock GET error', e);
-    failed++;
   }
 
   // Test 5.1: dynamic route specificity priority
-  try {
-    const fs = require('fs');
-    if (!require('fs').existsSync(path.join(mocksDir, 'api', ':type'))) {
-      require('fs').mkdirSync(path.join(mocksDir, 'api', ':type'), { recursive: true });
-    }
-    require('fs').writeFileSync(path.join(mocksDir, 'api', ':type', ':id.json'), JSON.stringify({ wildcard: true }));
-    server.reloadMocks();
+  if (process.platform === 'win32') {
+    console.log('⏭️ Dynamic Mock specificity skipped on Windows (colons in filenames unsupported on NTFS)');
+  } else {
+    try {
+      const fs = require('fs');
+      if (!require('fs').existsSync(path.join(mocksDir, 'api', ':type'))) {
+        require('fs').mkdirSync(path.join(mocksDir, 'api', ':type'), { recursive: true });
+      }
+      require('fs').writeFileSync(path.join(mocksDir, 'api', ':type', ':id.json'), JSON.stringify({ wildcard: true }));
+      server.reloadMocks();
 
-    if (!require('fs').existsSync(path.join(mocksDir, 'api', 'users'))) {
-      require('fs').mkdirSync(path.join(mocksDir, 'api', 'users'), { recursive: true });
-    }
-    require('fs').writeFileSync(path.join(mocksDir, 'api', 'users', ':id.json'), JSON.stringify({ id: 123 }));
-    server.reloadMocks();
-    const r = await request('GET', '/api/users/123', port);
-    if (r.status === 200 && r.body && r.body.id === 123 && !r.body.wildcard) {
-      console.log('✅ Dynamic Mock specificity matches exact over wildcard');
-      passed++;
-    } else {
-      console.log('❌ Dynamic Mock specificity failed', r);
+      if (!require('fs').existsSync(path.join(mocksDir, 'api', 'users'))) {
+        require('fs').mkdirSync(path.join(mocksDir, 'api', 'users'), { recursive: true });
+      }
+      require('fs').writeFileSync(path.join(mocksDir, 'api', 'users', ':id.json'), JSON.stringify({ id: 123 }));
+      server.reloadMocks();
+      const r = await request('GET', '/api/users/123', port);
+      if (r.status === 200 && r.body && r.body.id === 123 && !r.body.wildcard) {
+        console.log('✅ Dynamic Mock specificity matches exact over wildcard');
+        passed++;
+      } else {
+        console.log('❌ Dynamic Mock specificity failed', r);
+        failed++;
+      }
+    } catch (e) {
+      console.log('❌ Dynamic Mock specificity error', e);
       failed++;
+    } finally {
+      const fs = require('fs');
+      require('fs').rmSync(path.join(mocksDir, 'api', ':type'), { recursive: true, force: true });
+      server.reloadMocks();
     }
-  } catch (e) {
-    console.log('❌ Dynamic Mock specificity error', e);
-    failed++;
-  } finally {
-    const fs = require('fs');
-    require('fs').rmSync(path.join(mocksDir, 'api', ':type'), { recursive: true, force: true });
-    server.reloadMocks();
   }
 
   // Test 6: URL decoding and traversal prevention

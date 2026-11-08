@@ -1,5 +1,5 @@
 {
-  "name": "moq",
+  "name": "@shenald/moq",
   "version": "0.2.18",
   "description": "HTTP mocks at the speed of thought. Zero-config mock server.",
   "main": "src/index.js",
@@ -45,5 +45,12 @@
       "node18-macos-x64",
       "node18-windows-x64"
     ]
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shenald-dev/moq.git"
   }
 }
