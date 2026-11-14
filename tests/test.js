@@ -341,6 +341,88 @@ async function runTests() {
     failed++;
   }
 
+  // Test 12: CLI entrypoint --no-reload flag
+  try {
+    const cp = require('child_process');
+    const fs = require('fs');
+    const { parseArgs } = require('../bin/cli.js');
+
+    // Verify option parsing
+    assert.strictEqual(parseArgs(['--no-reload']).noReload, true, '--no-reload should set noReload to true');
+    assert.strictEqual(parseArgs(['--no-reload=true']).noReload, true, '--no-reload=true should set noReload to true');
+    assert.strictEqual(parseArgs(['--no-reload=false']).noReload, false, '--no-reload=false should set noReload to false');
+    assert.strictEqual(parseArgs([]).noReload, false, 'default should set noReload to false');
+
+    // Verify end-to-end hot reload suppression in CLI process
+    const tmpDir = path.join(__dirname, 'temp_cli_noreload');
+    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, 'sample.json'), JSON.stringify({ version: 'v1' }));
+
+    const getAvailablePort = () => new Promise((resolve, reject) => {
+      const s = http.createServer();
+      s.listen(0, () => {
+        const p = s.address().port;
+        s.close(() => resolve(p));
+      });
+      s.on('error', reject);
+    });
+    const cliTestPort = await getAvailablePort();
+
+    const cliPath = path.join(__dirname, '..', 'bin', 'cli.js');
+    const child = cp.spawn(process.execPath, [cliPath, '--port', String(cliTestPort), '--dir', tmpDir, '--no-reload'], {
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+
+    try {
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('CLI spawn timeout')), 5000);
+        child.stdout.on('data', d => {
+          if (d.toString().includes('🚀 moq')) {
+            clearTimeout(timeout);
+            resolve();
+          }
+        });
+        child.on('error', (err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
+      });
+
+      const get = () => new Promise((resolve, reject) => {
+        http.get(`http://localhost:${cliTestPort}/sample`, res => {
+          let data = '';
+          res.on('data', c => data += c);
+          res.on('end', () => {
+            try {
+              resolve(JSON.parse(data));
+            } catch (e) {
+              reject(e);
+            }
+          });
+        }).on('error', reject);
+      });
+
+      const r1 = await get();
+      assert.strictEqual(r1.version, 'v1');
+
+      // Update mock file on disk
+      fs.writeFileSync(path.join(tmpDir, 'sample.json'), JSON.stringify({ version: 'v2' }));
+      await new Promise(r => setTimeout(r, 200));
+
+      const r2 = await get();
+      assert.strictEqual(r2.version, 'v1', 'Cached version should persist when hot reloading is disabled');
+
+      console.log('✅ CLI entrypoint --no-reload disables hot reload');
+      passed++;
+    } finally {
+      child.kill();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  } catch (e) {
+    console.log('❌ CLI entrypoint --no-reload error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 

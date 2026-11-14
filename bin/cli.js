@@ -9,42 +9,51 @@ const { hideBin } = require('yargs/helpers');
 const MoqServer = require('../src/index.js');
 const path = require('path');
 
-const argv = yargs(hideBin(process.argv))
-  .usage('Usage: $0 [options] [proxyUrl]')
-  .command('$0 [proxyUrl]', 'Start the mock server', (yargs) => {
-    yargs.positional('proxyUrl', {
-      describe: 'Optional proxy target URL',
+function parseArgs(args = hideBin(process.argv)) {
+  const argv = yargs(args)
+    .usage('Usage: $0 [options] [proxyUrl]')
+    .command('$0 [proxyUrl]', 'Start the mock server', (yargs) => {
+      yargs.positional('proxyUrl', {
+        describe: 'Optional proxy target URL',
+        type: 'string',
+      });
+    })
+    .option('port', {
+      alias: 'p',
+      type: 'number',
+      description: 'Port to run the server on',
+      default: 4000,
+    })
+    .option('dir', {
+      alias: 'd',
       type: 'string',
-    });
-  })
-  .option('port', {
-    alias: 'p',
-    type: 'number',
-    description: 'Port to run the server on',
-    default: 4000,
-  })
-  .option('dir', {
-    alias: 'd',
-    type: 'string',
-    description: 'Directory containing mock files',
-    default: 'mocks',
-  })
-  .option('no-reload', {
-    type: 'boolean',
-    description: 'Disable hot reloading',
-    default: false,
-  })
-  .help()
-  .alias('help', 'h')
-  .argv;
+      description: 'Directory containing mock files',
+      default: 'mocks',
+    })
+    .option('no-reload', {
+      type: 'boolean',
+      description: 'Disable hot reloading',
+      default: false,
+    })
+    .help()
+    .alias('help', 'h')
+    .argv;
 
-const options = {
-  port: argv.port,
-  mocksDir: path.resolve(process.cwd(), argv.dir),
-  proxy: !!argv.proxyUrl,
-  proxyTarget: argv.proxyUrl,
-  noReload: Boolean(argv['no-reload'] || argv.noReload),
-};
+  const noReload = argv['no-reload'] === true || argv.reload === false || Boolean(argv.noReload);
 
-const server = new MoqServer(options);
-server.start();
+  return {
+    port: argv.port,
+    mocksDir: path.resolve(process.cwd(), argv.dir),
+    proxy: !!argv.proxyUrl,
+    proxyTarget: argv.proxyUrl,
+    noReload,
+  };
+}
+
+if (require.main === module) {
+  const options = parseArgs();
+  const server = new MoqServer(options);
+  server.start();
+}
+
+module.exports = { parseArgs };
