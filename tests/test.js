@@ -324,6 +324,23 @@ async function runTests() {
     failed++;
   }
 
+  // Test 11: CLI entrypoint --help
+  try {
+    const cp = require('child_process');
+    const cliPath = path.join(__dirname, '..', 'bin', 'cli.js');
+    const stdout = cp.execFileSync(process.execPath, [cliPath, '--help'], { encoding: 'utf8' });
+    if (stdout.includes('--port') && stdout.includes('--dir') && stdout.includes('--no-reload') && stdout.includes('proxyUrl')) {
+      console.log('✅ CLI entrypoint --help');
+      passed++;
+    } else {
+      console.log('❌ CLI entrypoint --help output missing options', stdout);
+      failed++;
+    }
+  } catch (e) {
+    console.log('❌ CLI entrypoint --help error', e);
+    failed++;
+  }
+
   // Cleanup
   httpServer.close();
 

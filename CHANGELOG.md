@@ -1,6 +1,8 @@
 # CHANGELOG.md
 
 ## [Unreleased]
+- Restored bin/cli.js CLI entrypoint with yargs option parsing and MoqServer startup.
+- Removed non-portable colon-named mock file to ensure clean Windows checkout compatibility.
 * **[Optimized]:** Removed redundant `getMockFiles()` calls on the hot path (in `resolveMockPath` and `notFoundHandler`), hoisting cache population to the main `handleRequest` handler.
 * **[Fixed]:** Fixed `exactMatchPathNoLeadingSlash` calculation to resolve `POST-api/users.json` format routing issues.
 * **[Optimized]:** Expanded test coverage to explicitly test non-GET (POST) mock resolutions.
