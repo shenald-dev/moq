@@ -1,6 +1,10 @@
 # CHANGELOG.md
 
 ## [Unreleased]
+- docs: correct install instructions to `@shenald/moq` (`moq-server` does not exist on npm); replace inaccurate TypeScript badge/claims with Node.js; remove undocumented `--delay` flag; document `--no-reload` and proxy mode.
+- chore: remove duplicated CHANGELOG history block introduced by an earlier auto-merge.
+- chore(ci): reduce publish workflow `contents` permission to `read` (least privilege).
+- chore: remove orphaned `.jules/` agent-state artifacts (zero code references).
 - Restored bin/cli.js CLI entrypoint with yargs option parsing and MoqServer startup.
 - Removed non-portable colon-named mock file to ensure clean Windows checkout compatibility.
 * **[Optimized]:** Removed redundant `getMockFiles()` calls on the hot path (in `resolveMockPath` and `notFoundHandler`), hoisting cache population to the main `handleRequest` handler.
@@ -49,44 +53,6 @@
   * Verified structural integrity of the proxy double-slash path concatenation fix for root proxy targets.
   * Executed safe minor and patch dependency bumps.
   * Maintained test suite passing with 100% success rate.
-
-## v0.2.13
-
-* **Quality Assurance / Lifecycle:**
-  * Verified structural integrity of the static payload optimization replacing Express res.send with native Buffer serving.
-  * Executed safe minor and patch dependency bumps.
-  * Maintained test suite passing with 100% success rate.
-# CHANGELOG.md
-## v0.2.18
-
-* **Quality Assurance / Lifecycle:**
-  * Documented dependency updates and performed lifecycle maintenance.
-  * Maintained test suite passing with 100% success rate.
-
-
-## v0.2.17
-
-* **Quality Assurance / Lifecycle:**
-  * Assessed previous agent's optimizations. No dead code pruned.
-  * Executed safe minor and patch dependency bumps.
-  * Maintained test suite passing with 100% success rate.
-
-
-## v0.2.16
-
-* **Quality Assurance / Lifecycle:**
-  * Verified structural integrity of the proxyBasePath optimization.
-  * Executed safe minor and patch dependency bumps.
-  * Maintained test suite passing with 100% success rate.
-
-
-## v0.2.15
-
-* **Quality Assurance / Lifecycle:**
-  * Verified structural integrity of the proxy double-slash path concatenation fix for root proxy targets.
-  * Executed safe minor and patch dependency bumps.
-  * Maintained test suite passing with 100% success rate.
-
 
 ## v0.2.13
 

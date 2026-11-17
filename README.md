@@ -9,7 +9,7 @@
 
   <br/>
   
-  [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC.svg?style=flat&logo=typescript&logoColor=white)](https://typescriptlang.org)
+  [![Node.js](https://img.shields.io/badge/Node.js-339933.svg?style=flat&logo=nodedotjs&logoColor=white)](https://nodejs.org)
   [![Express](https://img.shields.io/badge/Express.js-000000.svg?style=flat&logo=express&logoColor=white)](https://expressjs.com)
   [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 </div>
@@ -38,8 +38,8 @@ No YAML configuration, no complex routing files. Just drop JSON files in a folde
 - **⚡ Zero Configuration**: Route resolution is entirely file-system based (e.g., `mocks/api/users.json` automatically maps to `GET /api/users`).
 - **🔄 Hot Reloading**: Edit your JSON mock files and instantly see the changes in your frontend without restarting the server.
 - **🛡️ CORS Enabled**: Works flawlessly with Next.js, React, Vue, or any frontend framework locally.
-- **⏱️ Simulated Latency**: Test your loading states by easily configuring artificial network delays.
-- **🧬 TypeScript Native**: Built entirely in strict TypeScript for unmatched performance and safety.
+- **🔀 Proxy Fallback**: Optionally forward unmatched requests to a real backend URL.
+- **🪶 Lightweight Core**: Plain Node.js + Express — no build step, no transpilation.
 
 ---
 
@@ -49,12 +49,12 @@ No YAML configuration, no complex routing files. Just drop JSON files in a folde
 
 Install globally to use anywhere on your system:
 ```bash
-npm install -g moq-server
+npm install -g @shenald/moq
 ```
 
 Or run dynamically without installing:
 ```bash
-npx moq-server
+npx @shenald/moq
 ```
 
 ### 2. Setup your Mocks
@@ -88,11 +88,14 @@ You can customize the server behavior on startup:
 
 - `--port, -p`: Specify the port (default: `4000`).
 - `--dir, -d`: Specify the directory containing your JSON files (default: `./mocks`).
-- `--delay, -t`: Add simulated network latency in milliseconds (e.g., `-t 500`).
+- `--no-reload`: Disable hot reloading of mock files.
+- `proxyUrl` (positional): Forward unmatched requests to this target URL (proxy mode).
 
 **Example:**
 ```bash
-moq --port 8080 --dir ./api-responses --delay 1000
+moq --port 8080 --dir ./api-responses
+# Proxy unmatched routes to a real backend:
+moq https://api.example.com --port 8080
 ```
 
 ---
